@@ -1,0 +1,15 @@
+bin/
+obj/
+**/bin/
+**/obj/
+.vs/
+*.user
+*.db
+*.db-shm
+*.db-wal
+dist/
+build-check/
+build-publish/
+preview-sidebar/
+preview-p1-complete/
+preview*.png

@@ -1,0 +1,173 @@
+using Cdiary;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
+using Microsoft.Data.Sqlite;
+
+var path = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "test.db");
+var repository = new DiaryRepository(path);
+var date = new DateTime(2026, 9, 26);
+
+void Check(bool condition, string label)
+{
+    if (!condition) throw new Exception($"失败：{label}");
+    Console.WriteLine($"通过：{label}");
+}
+
+Check(repository.LoadTasks(date).Count == 0, "初始任务为空");
+Check(repository.NextReminder(date) is null, "初始无提醒");
+
+var task = repository.AddTask(date, "写计划");
+task.Note = "常用链接与备注";
+task.ReminderTime = new TimeSpan(9, 0, 0);
+repository.SaveTask(task);
+repository.SaveDayMemo(date, "今天的备忘");
+
+var reopened = new DiaryRepository(path);
+var loaded = reopened.LoadTasks(date).Single();
+Check(loaded.Id == task.Id && loaded.Title == "写计划" && loaded.Note == "常用链接与备注", "任务重启后恢复");
+Check(reopened.LoadDayMemo(date) == "今天的备忘", "当天备忘重启后恢复");
+Check(reopened.NextReminder(date.AddHours(8)) == date.AddHours(9), "找到下一次提醒");
+Check(reopened.DueReminders(date.AddHours(10)).Count == 1, "逾时任务待提醒");
+
+reopened.MarkNotified([task.Id], date.AddHours(10));
+Check(reopened.DueReminders(date.AddHours(10)).Count == 0, "已提醒任务不重复提醒");
+loaded.Title = "修改标题";
+reopened.SaveTask(loaded);
+Check(reopened.DueReminders(date.AddHours(10)).Count == 0, "编辑标题不重置提醒状态");
+loaded.ReminderTime = new TimeSpan(8, 0, 0);
+reopened.SaveTask(loaded);
+Check(reopened.DueReminders(date.AddHours(10)).Count == 1, "修改提醒时间后可重新提醒");
+loaded.IsDone = true;
+reopened.SaveTask(loaded);
+Check(reopened.DueReminders(date.AddHours(10)).Count == 0, "完成任务不会提醒");
+loaded.Note = "常用链接 50%_进度";
+reopened.SaveTask(loaded);
+Check(reopened.Search("链接").Any(result => result.TaskId == task.Id), "搜索中文任务笔记");
+Check(reopened.Search("备忘").Any(result => result.TaskId is null), "搜索每日备忘");
+Check(reopened.Search("%_").Count == 1 && reopened.Search("%_")[0].TaskId == task.Id,
+    "搜索百分号与下划线按原字符匹配");
+Check(reopened.Search("不存在").Count == 0, "无匹配搜索返回空结果");
+reopened.DeleteTask(task.Id);
+Check(reopened.LoadTasks(date).Count == 0, "删除任务");
+
+var repeatPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "repeat.db");
+var repeatRepository = new DiaryRepository(repeatPath);
+var start = DateTime.Today;
+var templateTask = repeatRepository.AddTask(start, "每天喝水");
+templateTask.Note = "先喝一杯温水";
+repeatRepository.SaveTask(templateTask);
+var dailyId = repeatRepository.SaveRule(templateTask, false, 0, "每天喝水", "先喝一杯温水", new TimeSpan(9, 15, 0));
+Check(repeatRepository.EnsureOccurrences(start.AddDays(1)) == 1
+    && repeatRepository.EnsureOccurrences(start.AddDays(1)) == 0, "每日规则只生成一次");
+var tomorrow = repeatRepository.LoadTasks(start.AddDays(1)).Single();
+Check(tomorrow.RecurrenceRuleId == dailyId && tomorrow.Note == "先喝一杯温水"
+    && tomorrow.ReminderAt == start.AddDays(1).AddHours(9).AddMinutes(15), "重复任务复制模板和提醒");
+tomorrow.IsDone = true;
+tomorrow.Note = "这天已经完成";
+repeatRepository.SaveTask(tomorrow);
+repeatRepository.SaveRule(templateTask, false, 0, "每天散步", "出门十分钟", null);
+repeatRepository.EnsureOccurrences(start.AddDays(2));
+Check(repeatRepository.LoadTasks(start.AddDays(1)).Single().Note == "这天已经完成"
+    && repeatRepository.LoadTasks(start.AddDays(2)).Single().Title == "每天散步", "更新规则不覆盖已有记录");
+repeatRepository.DeleteTask(tomorrow.Id);
+Check(repeatRepository.EnsureOccurrences(start.AddDays(1)) == 0, "删掉单日任务不会重新生成");
+repeatRepository.StopRule(dailyId, start.AddDays(2));
+Check(repeatRepository.EnsureOccurrences(start.AddDays(3)) == 0, "停止规则后不再生成");
+var weeklyTask = repeatRepository.AddTask(start, "每周检查");
+var nextDay = start.AddDays(1);
+repeatRepository.SaveRule(weeklyTask, true, 1 << (int)nextDay.DayOfWeek, "每周检查", "", null);
+Check(repeatRepository.EnsureOccurrences(nextDay) == 1
+    && repeatRepository.EnsureOccurrences(nextDay.AddDays(1)) == 0, "每周规则只在选定星期生成");
+Check(StartupSettings.BuildCommand(@"C:\Program Files\Cdiary\Cdiary.exe")
+    == "\"C:\\Program Files\\Cdiary\\Cdiary.exe\" --background", "自启命令正确引用路径和后台参数");
+
+var legacyPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "legacy.db");
+Directory.CreateDirectory(Path.GetDirectoryName(legacyPath)!);
+using (var oldConnection = new SqliteConnection($"Data Source={legacyPath}"))
+{
+    oldConnection.Open();
+    using var command = oldConnection.CreateCommand();
+    command.CommandText = "CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_date TEXT NOT NULL, title TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', completed INTEGER NOT NULL DEFAULT 0, reminder_at TEXT, notified_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); INSERT INTO tasks(task_date,title,note,completed,created_at,updated_at) VALUES('2026-09-26','旧任务','保留笔记',0,'2026-09-26T00:00:00.0000000','2026-09-26T00:00:00.0000000');";
+    command.ExecuteNonQuery();
+}
+var migrated = new DiaryRepository(legacyPath);
+Check(migrated.LoadTasks(date).Single().Note == "保留笔记", "旧数据库迁移后保留任务和笔记");
+
+var notePath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "note.db");
+var noteRepository = new DiaryRepository(notePath);
+var noteTask = noteRepository.AddTask(date, "便签任务");
+Exception? noteError = null;
+var dayReady = false;
+var pinReady = false;
+var searchNavigationReady = false;
+var noteThread = new Thread(() =>
+{
+    try
+    {
+        var noteWindow = new TaskNoteWindow(noteTask, noteRepository);
+        noteTask.Note = "便签中的内容";
+        noteWindow.FlushEdits();
+        var sharedTasks = new ObservableCollection<DiaryTask> { noteTask };
+        var dayWindow = new DailyTodoWindow(date, sharedTasks, _ => { }, _ => { });
+        noteTask.IsDone = true;
+        dayReady = ReferenceEquals(dayWindow.Tasks, sharedTasks) && dayWindow.ProgressLabel == "已完成 1 / 1";
+        noteWindow.SetPinned(true);
+        var notePin = (ToggleButton)noteWindow.FindName("PinToggle")!;
+        notePin.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateTarget();
+        var dayPin = (ToggleButton)dayWindow.FindName("PinToggle")!;
+        dayPin.IsChecked = true;
+        dayPin.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateSource();
+        pinReady = notePin.IsChecked == true && dayWindow.Topmost;
+        using var noteScheduler = new ReminderScheduler(noteRepository, Dispatcher.CurrentDispatcher, _ => { });
+        var mainWindow = new MainWindow(noteRepository, noteScheduler);
+        var searchResult = noteRepository.Search("便签任务").Single();
+        mainWindow.SearchResults.Add(searchResult);
+        var root = (FrameworkElement)mainWindow.Content;
+        root.Measure(new Size(1100, 720));
+        root.Arrange(new Rect(0, 0, 1100, 720));
+        root.UpdateLayout();
+        ((ListBox)mainWindow.FindName("SearchResultsList")!).SelectedItem = searchResult;
+        searchNavigationReady = mainWindow.SelectedTask?.Id == noteTask.Id
+            && ((UIElement)mainWindow.FindName("HomePage")!).Visibility == Visibility.Visible;
+    }
+    catch (Exception error) { noteError = error; }
+});
+noteThread.SetApartmentState(ApartmentState.STA);
+noteThread.Start();
+Check(noteThread.Join(TimeSpan.FromSeconds(5)) && noteError is null
+    && noteRepository.LoadTasks(date).Single().Note == "便签中的内容", "便签窗口加载并保存共享笔记");
+Check(dayReady, "当日便签加载共享任务并更新进度");
+Check(pinReady, "图钉状态与窗口置顶同步");
+Check(searchNavigationReady, "搜索结果定位到任务");
+
+var clockPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "clock.db");
+var clockRepository = new DiaryRepository(clockPath);
+var trigger = DateTime.Now.AddSeconds(2);
+if (trigger.Date == DateTime.Today)
+{
+    var clockTask = clockRepository.AddTask(DateTime.Today, "计时提醒");
+    clockTask.ReminderTime = trigger.TimeOfDay;
+    clockRepository.SaveTask(clockTask);
+    var delivered = 0;
+    var thread = new Thread(() =>
+    {
+        var dispatcher = Dispatcher.CurrentDispatcher;
+        using var scheduler = new ReminderScheduler(clockRepository, dispatcher, due =>
+        {
+            delivered += due.Count;
+            dispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
+        });
+        var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+        timeout.Tick += (_, _) => dispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
+        timeout.Start();
+        scheduler.Start();
+        Dispatcher.Run();
+    });
+    thread.SetApartmentState(ApartmentState.STA);
+    thread.Start();
+    Check(thread.Join(TimeSpan.FromSeconds(7)) && delivered == 1, "到点触发一次提醒");
+    Check(clockRepository.DueReminders(DateTime.Now).Count == 0, "到点提醒后记录已送达");
+}
