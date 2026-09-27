@@ -43,6 +43,7 @@ public sealed class DiaryRepository
                 title TEXT NOT NULL,
                 note TEXT NOT NULL DEFAULT '',
                 completed INTEGER NOT NULL DEFAULT 0,
+                completed_at TEXT,
                 reminder_at TEXT,
                 notified_at TEXT,
                 recurrence_rule_id INTEGER,
@@ -78,12 +79,18 @@ public sealed class DiaryRepository
         columns.CommandText = "PRAGMA table_info(tasks);";
         using (var reader = columns.ExecuteReader())
         {
-            var found = false;
-            while (reader.Read()) found |= reader.GetString(1) == "recurrence_rule_id";
-            if (!found)
+            var names = new HashSet<string>();
+            while (reader.Read()) names.Add(reader.GetString(1));
+            if (!names.Contains("recurrence_rule_id"))
             {
                 using var alter = connection.CreateCommand();
                 alter.CommandText = "ALTER TABLE tasks ADD COLUMN recurrence_rule_id INTEGER;";
+                alter.ExecuteNonQuery();
+            }
+            if (!names.Contains("completed_at"))
+            {
+                using var alter = connection.CreateCommand();
+                alter.CommandText = "ALTER TABLE tasks ADD COLUMN completed_at TEXT; UPDATE tasks SET completed_at=updated_at WHERE completed=1;";
                 alter.ExecuteNonQuery();
             }
         }
@@ -97,7 +104,7 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
             FROM tasks WHERE task_date = $date ORDER BY id;
             """;
         command.Parameters.AddWithValue("$date", Day(date));
@@ -129,7 +136,7 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            UPDATE tasks SET title=$title, note=$note, completed=$completed,
+            UPDATE tasks SET title=$title, note=$note, completed=$completed, completed_at=$completedAt,
                 recurrence_rule_id=$rule,
                 notified_at=CASE WHEN reminder_at IS $reminder THEN notified_at ELSE NULL END,
                 reminder_at=$reminder, updated_at=$now
@@ -139,6 +146,7 @@ public sealed class DiaryRepository
         command.Parameters.AddWithValue("$title", task.Title);
         command.Parameters.AddWithValue("$note", task.Note);
         command.Parameters.AddWithValue("$completed", task.IsDone ? 1 : 0);
+        command.Parameters.AddWithValue("$completedAt", task.CompletedAt is { } completedAt ? Stamp(completedAt) : DBNull.Value);
         command.Parameters.AddWithValue("$rule", (object?)task.RecurrenceRuleId ?? DBNull.Value);
         command.Parameters.AddWithValue("$reminder", (object?)task.ReminderAt is DateTime time ? Stamp(time) : DBNull.Value);
         command.Parameters.AddWithValue("$now", Stamp(DateTime.Now));
@@ -162,6 +170,17 @@ public sealed class DiaryRepository
         command.Parameters.AddWithValue("$id", id);
         command.ExecuteNonQuery();
         transaction.Commit();
+    }
+
+    public List<DiaryTask> LoadCompletedTasks()
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at FROM tasks WHERE completed=1 ORDER BY completed_at DESC, id DESC;";
+        using var reader = command.ExecuteReader();
+        var result = new List<DiaryTask>();
+        while (reader.Read()) result.Add(ReadTask(reader));
+        return result;
     }
 
     public RecurrenceRule? LoadRule(long id)
@@ -348,7 +367,7 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
             FROM tasks
             WHERE completed=0 AND notified_at IS NULL AND reminder_at IS NOT NULL
               AND reminder_at <= $now
@@ -398,7 +417,8 @@ public sealed class DiaryRepository
         var notified = reader.IsDBNull(6) ? (DateTime?)null : Parse(reader.GetString(6));
         return new DiaryTask(reader.GetInt64(0), date, reader.GetString(2), reader.GetString(3),
             reader.GetInt64(4) != 0, reminder, notified,
-            reader.IsDBNull(7) ? null : reader.GetInt64(7));
+            reader.IsDBNull(7) ? null : reader.GetInt64(7),
+            reader.IsDBNull(8) ? null : Parse(reader.GetString(8)));
     }
 
     private static string Day(DateTime date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

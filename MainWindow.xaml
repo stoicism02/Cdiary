@@ -108,6 +108,21 @@
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
+        <Style x:Key="CompletedFilter" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="Foreground" Value="#8D806A"/>
+            <Setter Property="Margin" Value="0,0,8,0"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+                <Border x:Name="Chip" Background="#FFFBE7" BorderBrush="#D8CBB3" BorderThickness="1.5"
+                        CornerRadius="15" Padding="14,8">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#DDF7F1"/>
+                        <Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/><Setter Property="Foreground" Value="#0D9F94"/></Trigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
         <Style x:Key="PaperInput" TargetType="TextBox">
             <Setter Property="Background" Value="#FFFBE7"/><Setter Property="Foreground" Value="#725D42"/>
             <Setter Property="BorderBrush" Value="#C4B89E"/><Setter Property="BorderThickness" Value="2"/>
@@ -244,6 +259,15 @@
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
                         </StackPanel>
                     </RadioButton>
+                    <RadioButton x:Name="CompletedTab" GroupName="Pages" Style="{StaticResource RailTab}"
+                                 ToolTip="已完成" Click="CompletedTab_Click" Margin="0,9,0,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="✓" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                            <TextBlock Text="完成" FontSize="10" HorizontalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="SettingsTab" GroupName="Pages" Style="{StaticResource RailTab}"
                                  ToolTip="设置" Click="SettingsTab_Click" Margin="0,9,0,0">
                         <StackPanel HorizontalAlignment="Center">
@@ -293,7 +317,8 @@
                                 <TextBlock Text="{Binding ProgressLabel}" Foreground="#11A89B" FontWeight="Bold" FontSize="11"/></Border>
                         </Grid>
                         <Border Grid.Row="1" Height="1" Background="#D8CCB6" Margin="0,15,0,15"/>
-                        <ListBox x:Name="TaskList" Grid.Row="2" ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask, Mode=TwoWay}"
+                        <Grid Grid.Row="2">
+                        <ListBox x:Name="TaskList" ItemsSource="{Binding ActiveTasks}" SelectedItem="{Binding SelectedTask, Mode=TwoWay}"
                                  ItemContainerStyle="{StaticResource TaskRow}" Background="Transparent" BorderThickness="0">
                             <ListBox.ItemTemplate><DataTemplate><Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -306,6 +331,13 @@
                                 <TextBlock Grid.Column="2" Text="{Binding ReminderLabel}" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center"/>
                             </Grid></DataTemplate></ListBox.ItemTemplate>
                         </ListBox>
+                        <TextBlock Text="{Binding EmptyTaskMessage}" Foreground="{StaticResource Muted}" FontSize="12"
+                                   TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers><DataTrigger Binding="{Binding HasActiveTasks}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                            </Style></TextBlock.Style>
+                        </TextBlock>
+                        </Grid>
                         <Grid Grid.Row="3" Margin="0,10,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBox x:Name="NewTaskBox" Style="{StaticResource PaperInput}" KeyDown="NewTaskBox_KeyDown" ToolTip="输入任务名称，按回车添加"/>
@@ -412,6 +444,73 @@
                         <TextBlock Text="输入关键词，按回车试试看" FontSize="12" Foreground="{StaticResource Muted}"
                                    HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+            <Border x:Name="CompletedPage" Grid.Column="2" Visibility="Collapsed"
+                    Background="{StaticResource Card}" CornerRadius="24" Padding="24,21">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="已完成  ✿" FontSize="23" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                        <TextBlock Text="{Binding CompletedCountLabel}" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,20,0,14">
+                        <RadioButton x:Name="AllCompletedFilter" Content="全部日期" GroupName="CompletedDates" IsChecked="True"
+                                     Style="{StaticResource CompletedFilter}" Click="CompletedFilter_Click"/>
+                        <RadioButton x:Name="TodayCompletedFilter" Content="今天" GroupName="CompletedDates"
+                                     Style="{StaticResource CompletedFilter}" Click="CompletedFilter_Click"/>
+                        <RadioButton x:Name="WeekCompletedFilter" Content="近 7 天" GroupName="CompletedDates"
+                                     Style="{StaticResource CompletedFilter}" Click="CompletedFilter_Click"/>
+                    </StackPanel>
+                    <Grid Grid.Row="2">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding CompletedGroups}">
+                                <ItemsControl.ItemTemplate><DataTemplate>
+                                    <StackPanel Margin="0,0,0,15">
+                                        <Grid Margin="4,0,4,10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding DateLabel}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding CountLabel}" FontSize="11" Foreground="{StaticResource Muted}"
+                                                       Margin="10,3,0,0"/>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding Tasks}">
+                                            <ItemsControl.ItemTemplate><DataTemplate>
+                                                <Border Background="#FFFBE7" BorderBrush="#E5DCC7" BorderThickness="1.5"
+                                                        CornerRadius="17" Padding="15,12" Margin="0,0,0,8">
+                                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <Border Width="24" Height="24" CornerRadius="8" Background="#19C8B9" BorderBrush="#0D9F94"
+                                                                BorderThickness="1.5" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                            <TextBlock Text="✓" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="1,0,12,0">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                                <TextBlock Text="原定 " FontSize="10" Foreground="{StaticResource Muted}"/>
+                                                                <TextBlock Text="{Binding Date, StringFormat={}{0:M月d日}}" FontSize="10" Foreground="{StaticResource Muted}"/>
+                                                                <TextBlock Text="{Binding Note}" FontSize="10" Foreground="{StaticResource Muted}" Margin="12,0,0,0"
+                                                                           TextTrimming="CharacterEllipsis" MaxWidth="310"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="2" Content="恢复待办" Style="{StaticResource Pill}" FontSize="11" Padding="10,6"
+                                                                VerticalAlignment="Center" Tag="{Binding}" Click="RestoreCompleted_Click"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate></ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate></ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers><DataTrigger Binding="{Binding HasCompletedTasks}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                            </Style></StackPanel.Style>
+                            <Border Width="68" Height="68" Background="#DDF7F1" CornerRadius="23" HorizontalAlignment="Center" Margin="0,0,0,13">
+                                <TextBlock Text="✓" FontSize="34" FontWeight="Bold" Foreground="#19C8B9" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="这里还没有完成的任务" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Ink}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="勾选待办后，就会收在这里" FontSize="12" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </Border>

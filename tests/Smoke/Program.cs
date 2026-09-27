@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
+using System.Windows.Media;
 using Microsoft.Data.Sqlite;
 
 var path = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "test.db");
@@ -14,6 +15,23 @@ void Check(bool condition, string label)
 {
     if (!condition) throw new Exception($"失败：{label}");
     Console.WriteLine($"通过：{label}");
+}
+
+System.Windows.Controls.Button? FindRestoreButton(DependencyObject root)
+{
+    if (root is System.Windows.Controls.Button { Content: "恢复待办" } button) return button;
+    for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        if (FindRestoreButton(VisualTreeHelper.GetChild(root, index)) is { } found) return found;
+    return null;
+}
+
+System.Windows.Controls.CheckBox? FindTaskCheckBox(DependencyObject root, long id)
+{
+    if (root is System.Windows.Controls.CheckBox { DataContext: DiaryTask task } check && task.Id == id)
+        return check;
+    for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        if (FindTaskCheckBox(VisualTreeHelper.GetChild(root, index), id) is { } found) return found;
+    return null;
 }
 
 Check(repository.LoadTasks(date).Count == 0, "初始任务为空");
@@ -90,11 +108,12 @@ using (var oldConnection = new SqliteConnection($"Data Source={legacyPath}"))
 {
     oldConnection.Open();
     using var command = oldConnection.CreateCommand();
-    command.CommandText = "CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_date TEXT NOT NULL, title TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', completed INTEGER NOT NULL DEFAULT 0, reminder_at TEXT, notified_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); INSERT INTO tasks(task_date,title,note,completed,created_at,updated_at) VALUES('2026-09-26','旧任务','保留笔记',0,'2026-09-26T00:00:00.0000000','2026-09-26T00:00:00.0000000');";
+    command.CommandText = "CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_date TEXT NOT NULL, title TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', completed INTEGER NOT NULL DEFAULT 0, reminder_at TEXT, notified_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); INSERT INTO tasks(task_date,title,note,completed,created_at,updated_at) VALUES('2026-09-26','旧任务','保留笔记',0,'2026-09-26T00:00:00.0000000','2026-09-26T00:00:00.0000000'); INSERT INTO tasks(task_date,title,note,completed,created_at,updated_at) VALUES('2026-09-26','旧完成任务','旧记录',1,'2026-09-26T00:00:00.0000000','2026-09-26T09:00:00.0000000');";
     command.ExecuteNonQuery();
 }
 var migrated = new DiaryRepository(legacyPath);
-Check(migrated.LoadTasks(date).Single().Note == "保留笔记", "旧数据库迁移后保留任务和笔记");
+Check(migrated.LoadTasks(date).Single(task => task.Title == "旧任务").Note == "保留笔记", "旧数据库迁移后保留任务和笔记");
+Check(migrated.LoadCompletedTasks().Single().CompletedAt == date.AddHours(9), "旧完成任务迁移后保留完成日期");
 
 var notePath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "note.db");
 var noteRepository = new DiaryRepository(notePath);
@@ -103,6 +122,8 @@ Exception? noteError = null;
 var dayReady = false;
 var pinReady = false;
 var searchNavigationReady = false;
+var completionFlowReady = false;
+var stickyFilterReady = false;
 var noteThread = new Thread(() =>
 {
     try
@@ -114,6 +135,7 @@ var noteThread = new Thread(() =>
         var dayWindow = new DailyTodoWindow(date, sharedTasks, _ => { }, _ => { });
         noteTask.IsDone = true;
         dayReady = ReferenceEquals(dayWindow.Tasks, sharedTasks) && dayWindow.ProgressLabel == "已完成 1 / 1";
+        stickyFilterReady = !dayWindow.ActiveTasks.Cast<DiaryTask>().Any();
         noteWindow.SetPinned(true);
         var notePin = (ToggleButton)noteWindow.FindName("PinToggle")!;
         notePin.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateTarget();
@@ -122,7 +144,32 @@ var noteThread = new Thread(() =>
         dayPin.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateSource();
         pinReady = notePin.IsChecked == true && dayWindow.Topmost;
         using var noteScheduler = new ReminderScheduler(noteRepository, Dispatcher.CurrentDispatcher, _ => { });
+        var activeTask = noteRepository.AddTask(DateTime.Today, "完成后收纳");
         var mainWindow = new MainWindow(noteRepository, noteScheduler);
+        var visibleBefore = mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id);
+        var mainRoot = (FrameworkElement)mainWindow.Content;
+        mainRoot.Measure(new Size(1100, 720));
+        mainRoot.Arrange(new Rect(0, 0, 1100, 720));
+        mainRoot.UpdateLayout();
+        var taskCheck = FindTaskCheckBox(mainRoot, activeTask.Id);
+        if (taskCheck is not null)
+        {
+            taskCheck.IsChecked = true;
+            taskCheck.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        }
+        var hiddenAfter = !mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id)
+            && noteRepository.LoadCompletedTasks().Any(task => task.Id == activeTask.Id);
+        ((RadioButton)mainWindow.FindName("CompletedTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        var grouped = mainWindow.CompletedGroups.Any(group => group.Tasks.Any(task => task.Id == activeTask.Id));
+        var completedRoot = (FrameworkElement)mainWindow.Content;
+        completedRoot.Measure(new Size(1100, 720));
+        completedRoot.Arrange(new Rect(0, 0, 1100, 720));
+        completedRoot.UpdateLayout();
+        var restore = FindRestoreButton(completedRoot);
+        restore?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        completionFlowReady = visibleBefore && taskCheck is not null && hiddenAfter && grouped && restore is not null
+            && mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id)
+            && !noteRepository.LoadCompletedTasks().Any(task => task.Id == activeTask.Id);
         var searchResult = noteRepository.Search("便签任务").Single();
         mainWindow.SearchResults.Add(searchResult);
         var root = (FrameworkElement)mainWindow.Content;
@@ -140,6 +187,8 @@ noteThread.Start();
 Check(noteThread.Join(TimeSpan.FromSeconds(5)) && noteError is null
     && noteRepository.LoadTasks(date).Single().Note == "便签中的内容", "便签窗口加载并保存共享笔记");
 Check(dayReady, "当日便签加载共享任务并更新进度");
+Check(stickyFilterReady, "完成任务从当日便签清单移走");
+Check(completionFlowReady, "完成任务移入已完成并可恢复到待办");
 Check(pinReady, "图钉状态与窗口置顶同步");
 Check(searchNavigationReady, "搜索结果定位到任务");
 

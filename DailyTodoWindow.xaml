@@ -142,7 +142,7 @@
         </Grid>
         <Border Grid.Row="2" Background="#F7F3DF" CornerRadius="21" Padding="12">
             <Grid>
-                <ListBox x:Name="TodoList" ItemsSource="{Binding Tasks}" ItemContainerStyle="{StaticResource TodoRow}"
+                <ListBox x:Name="TodoList" ItemsSource="{Binding ActiveTasks}" ItemContainerStyle="{StaticResource TodoRow}"
                          Background="Transparent" BorderThickness="0" MouseDoubleClick="TodoList_MouseDoubleClick">
                 <ListBox.ItemTemplate><DataTemplate><Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -161,7 +161,7 @@
                                FontSize="11" VerticalAlignment="Center"/>
                 </Grid></DataTemplate></ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock Text="这一天还没有任务&#10;去主界面添加第一件事吧" TextAlignment="Center"
+                <TextBlock Text="今天的待办已清空&#10;完成的任务可在主界面查看" TextAlignment="Center"
                            Foreground="#9F927D" FontSize="12" LineHeight="22"
                            HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>

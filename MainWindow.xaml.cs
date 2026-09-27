@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using System.Windows.Data;
 using Forms = System.Windows.Forms;
 
 namespace Cdiary;
@@ -29,6 +30,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _searchStatus = "输入关键词，按回车搜索";
     private bool _memoDirty;
     private int _searchVersion;
+    private int _completedFilterDays;
+    private List<DiaryTask> _completedTasks = [];
 
     public MainWindow(DiaryRepository repository, ReminderScheduler scheduler)
     {
@@ -38,6 +41,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => FlushEdits();
         SearchResults.CollectionChanged += (_, _) => Changed(nameof(HasSearchResults));
+        ActiveTasks = CollectionViewSource.GetDefaultView(_tasks);
+        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
         DataContext = this;
         AutostartCheck.IsChecked = StartupSettings.IsEnabled;
         RefreshDays();
@@ -48,6 +53,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool AllowExit { get; set; }
     public ObservableCollection<DayOption> Days { get; } = new();
     public ObservableCollection<SearchResult> SearchResults { get; } = new();
+    public ObservableCollection<CompletedDayGroup> CompletedGroups { get; } = new();
+    public ICollectionView ActiveTasks { get; private set; }
+    public bool HasActiveTasks => Tasks.Any(task => !task.IsDone);
+    public string EmptyTaskMessage => Tasks.Count == 0 ? "这一天还没有安排任务" : "待办已清空，完成的任务在左侧“完成”里";
+    public string CompletedCountLabel => $"已完成 {_completedTasks.Count} 项任务";
+    public bool HasCompletedTasks => CompletedGroups.Count > 0;
     public bool HasSearchResults => SearchResults.Count > 0;
     public string SearchStatus
     {
@@ -69,7 +80,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             foreach (var task in _tasks) task.PropertyChanged -= TaskChanged;
             _tasks = value;
             foreach (var task in _tasks) task.PropertyChanged += TaskChanged;
+            ActiveTasks = CollectionViewSource.GetDefaultView(_tasks);
+            ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
             Changed();
+            Changed(nameof(ActiveTasks));
+            Changed(nameof(HasActiveTasks));
+            Changed(nameof(EmptyTaskMessage));
             Changed(nameof(ProgressLabel));
         }
     }
@@ -152,7 +168,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         _dayMemo = _repository.LoadDayMemo(_selectedDate);
         _memoDirty = false;
-        SelectedTask = Tasks.FirstOrDefault();
+        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone);
         Dispatcher.BeginInvoke(new Action(() =>
         {
             if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
@@ -184,6 +200,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         HomeTab.IsChecked = true;
         HomePage.Visibility = Visibility.Visible;
         SearchPage.Visibility = Visibility.Collapsed;
+        CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
     }
 
@@ -192,6 +209,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SearchTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Visible;
+        CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
         Dispatcher.BeginInvoke(new Action(() => SearchBox.Focus()), DispatcherPriority.Input);
     }
@@ -201,8 +219,42 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SettingsTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Collapsed;
+        CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Visible;
         AutostartCheck.IsChecked = StartupSettings.IsEnabled;
+    }
+
+    private void ShowCompletedPage()
+    {
+        FlushEdits();
+        CompletedTab.IsChecked = true;
+        HomePage.Visibility = Visibility.Collapsed;
+        SearchPage.Visibility = Visibility.Collapsed;
+        SettingsPage.Visibility = Visibility.Collapsed;
+        CompletedPage.Visibility = Visibility.Visible;
+        ReloadCompleted();
+    }
+
+    private void ReloadCompleted()
+    {
+        _completedTasks = _repository.LoadCompletedTasks();
+        RefreshCompletedGroups();
+    }
+
+    private void RefreshCompletedGroups()
+    {
+        CompletedGroups.Clear();
+        var cutoff = _completedFilterDays switch
+        {
+            1 => DateTime.Today,
+            7 => DateTime.Today.AddDays(-6),
+            _ => DateTime.MinValue
+        };
+        foreach (var group in _completedTasks.Where(task => (task.CompletedAt ?? task.Date).Date >= cutoff)
+                     .GroupBy(task => (task.CompletedAt ?? task.Date).Date))
+            CompletedGroups.Add(new CompletedDayGroup(group.Key, group.ToList()));
+        Changed(nameof(CompletedCountLabel));
+        Changed(nameof(HasCompletedTasks));
     }
 
     private void TaskChanged(object? sender, PropertyChangedEventArgs e)
@@ -215,6 +267,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             FlushEdits();
             _scheduler.Refresh();
             Changed(nameof(ProgressLabel));
+            if (e.PropertyName == nameof(DiaryTask.IsDone))
+            {
+                ActiveTasks.Refresh();
+                Changed(nameof(HasActiveTasks));
+                Changed(nameof(EmptyTaskMessage));
+                if (task.IsDone && ReferenceEquals(SelectedTask, task)) SelectedTask = null;
+                if (CompletedPage.Visibility == Visibility.Visible) ReloadCompleted();
+            }
         }
         else QueueSave();
     }
@@ -275,7 +335,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
     private void HomeTab_Click(object sender, RoutedEventArgs e) => ShowHomePage();
     private void SearchTab_Click(object sender, RoutedEventArgs e) => ShowSearchPage();
+    private void CompletedTab_Click(object sender, RoutedEventArgs e) => ShowCompletedPage();
     private void SettingsTab_Click(object sender, RoutedEventArgs e) => ShowSettingsPage();
+
+    private void CompletedFilter_Click(object sender, RoutedEventArgs e)
+    {
+        _completedFilterDays = sender == TodayCompletedFilter ? 1 : sender == WeekCompletedFilter ? 7 : 0;
+        RefreshCompletedGroups();
+    }
+
+    private void RestoreCompleted_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { Tag: DiaryTask row }) return;
+        var live = Tasks.FirstOrDefault(task => task.Id == row.Id)
+            ?? _dayWindows.Values.SelectMany(window => window.Tasks).FirstOrDefault(task => task.Id == row.Id)
+            ?? (_noteWindows.TryGetValue(row.Id, out var noteWindow) ? noteWindow.Task : null)
+            ?? row;
+        live.IsDone = false;
+        _repository.SaveTask(live);
+        _scheduler.Refresh();
+        ReloadCompleted();
+    }
 
     private void AutostartCheck_Click(object sender, RoutedEventArgs e)
     {
@@ -363,6 +443,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         TaskList.ScrollIntoView(task);
         NewTaskBox.Clear();
         Changed(nameof(ProgressLabel));
+        Changed(nameof(HasActiveTasks));
+        Changed(nameof(EmptyTaskMessage));
     }
 
     private void DeleteTask_Click(object sender, RoutedEventArgs e)
@@ -374,9 +456,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         task.PropertyChanged -= TaskChanged;
         _repository.DeleteTask(task.Id);
         Tasks.Remove(task);
-        SelectedTask = Tasks.FirstOrDefault();
+        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone);
         _scheduler.Refresh();
         Changed(nameof(ProgressLabel));
+        Changed(nameof(HasActiveTasks));
+        Changed(nameof(EmptyTaskMessage));
     }
 
     private void TaskCheck_Click(object sender, RoutedEventArgs e) => Changed(nameof(ProgressLabel));
@@ -402,6 +486,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (Tasks.Contains(task)) return;
         _repository.SaveTask(task);
         _scheduler.Refresh();
+        if (CompletedPage.Visibility == Visibility.Visible) ReloadCompleted();
     }
 
     private void OpenNote_Click(object sender, RoutedEventArgs e)

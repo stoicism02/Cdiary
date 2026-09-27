@@ -11,13 +11,15 @@ public sealed class DiaryTask : INotifyPropertyChanged
     private TimeSpan? _reminderTime;
 
     public DiaryTask(long id, DateTime date, string title, string note, bool isDone,
-        TimeSpan? reminderTime, DateTime? notifiedAt, long? recurrenceRuleId = null)
+        TimeSpan? reminderTime, DateTime? notifiedAt, long? recurrenceRuleId = null,
+        DateTime? completedAt = null)
     {
         Id = id;
         Date = date.Date;
         _title = title;
         _note = note;
         _isDone = isDone;
+        CompletedAt = completedAt;
         _reminderTime = reminderTime;
         NotifiedAt = notifiedAt;
         RecurrenceRuleId = recurrenceRuleId;
@@ -27,10 +29,21 @@ public sealed class DiaryTask : INotifyPropertyChanged
     public long Id { get; }
     public DateTime Date { get; }
     public DateTime? NotifiedAt { get; set; }
+    public DateTime? CompletedAt { get; private set; }
     public long? RecurrenceRuleId { get; set; }
     public string Title { get => _title; set { _title = value; Changed(); } }
     public string Note { get => _note; set { _note = value; Changed(); } }
-    public bool IsDone { get => _isDone; set { _isDone = value; Changed(); } }
+    public bool IsDone
+    {
+        get => _isDone;
+        set
+        {
+            if (_isDone == value) return;
+            _isDone = value;
+            CompletedAt = value ? DateTime.Now : null;
+            Changed();
+        }
+    }
     public TimeSpan? ReminderTime
     {
         get => _reminderTime;

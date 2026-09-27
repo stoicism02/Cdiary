@@ -12,4 +12,5 @@ build-check/
 build-publish/
 preview-sidebar/
 preview-p1-complete/
+preview-*/
 preview*.png

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Data;
 using WpfCheckBox = System.Windows.Controls.CheckBox;
 
 namespace Cdiary;
@@ -24,6 +25,8 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
         _openTaskNote = openTaskNote;
         _saveCompletion = saveCompletion;
         InitializeComponent();
+        ActiveTasks = CollectionViewSource.GetDefaultView(Tasks);
+        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
         DataContext = this;
         Tasks.CollectionChanged += TasksChanged;
         foreach (var task in Tasks) task.PropertyChanged += TaskChanged;
@@ -33,9 +36,10 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public DateTime Date { get; }
     public ObservableCollection<DiaryTask> Tasks { get; }
+    public ICollectionView ActiveTasks { get; }
     public string DayLabel => Date.ToString("M月d日 dddd", CultureInfo.GetCultureInfo("zh-CN"));
     public string ProgressLabel => $"已完成 {Tasks.Count(task => task.IsDone)} / {Tasks.Count}";
-    public bool HasTasks => Tasks.Count > 0;
+    public bool HasTasks => Tasks.Any(task => !task.IsDone);
 
     private void TasksChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -50,7 +54,11 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
     private void TaskChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(DiaryTask.IsDone))
+        {
+            ActiveTasks.Refresh();
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressLabel)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasTasks)));
+        }
     }
 
     private void TaskCheck_Click(object sender, RoutedEventArgs e)
