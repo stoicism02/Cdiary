@@ -66,6 +66,24 @@ Render(repeatRoot, Path.Combine(output, "preview-repeat-daily.png"), 445, (int)M
 ((RadioButton)repeat.FindName("WeeklyRadio")!).IsChecked = true;
 repeatRoot.Measure(new Size(445, double.PositiveInfinity));
 Render(repeatRoot, Path.Combine(output, "preview-repeat-weekly.png"), 445, (int)Math.Ceiling(repeatRoot.DesiredSize.Height));
+var minuteOptions = new StackPanel();
+foreach (var minute in new[] { "00", "05", "10", "15" })
+    minuteOptions.Children.Add(new ComboBoxItem
+    {
+        Content = minute,
+        IsSelected = minute == "10",
+        Style = (Style)repeat.Resources[typeof(ComboBoxItem)]
+    });
+var minutePreview = new Border
+{
+    Background = new SolidColorBrush(Color.FromRgb(247, 243, 223)),
+    BorderBrush = new SolidColorBrush(Color.FromRgb(216, 203, 179)),
+    BorderThickness = new Thickness(1.5),
+    CornerRadius = new CornerRadius(16),
+    Padding = new Thickness(4),
+    Child = minuteOptions
+};
+Render(minutePreview, Path.Combine(output, "preview-repeat-minute-options.png"), 86, 180);
 }
 
 static void Render(FrameworkElement root, string path, int width = 1100, int height = 720)

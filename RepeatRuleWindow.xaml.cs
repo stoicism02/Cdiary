@@ -22,10 +22,10 @@ public partial class RepeatRuleWindow : Window
         for (var day = 0; day < 7; day++) _days[day].IsChecked = (mask & (1 << day)) != 0;
         TitleBox.Text = rule?.Title ?? task.Title;
         HourBox.ItemsSource = Enumerable.Range(0, 24).Select(hour => hour.ToString("00")).ToArray();
-        MinuteBox.ItemsSource = Enumerable.Range(0, 60).Select(minute => minute.ToString("00")).ToArray();
+        MinuteBox.ItemsSource = Enumerable.Range(0, 12).Select(slot => (slot * 5).ToString("00")).ToArray();
         var reminder = rule?.ReminderTime ?? task.ReminderTime;
         HourBox.SelectedIndex = reminder?.Hours ?? 9;
-        MinuteBox.SelectedIndex = reminder?.Minutes ?? 0;
+        MinuteBox.SelectedIndex = reminder is { } selectedReminder ? Math.Min(11, (selectedReminder.Minutes + 2) / 5) : 0;
         ReminderCheck.IsChecked = reminder is not null;
         StopButton.Visibility = rule is null || rule.EndDate is not null ? Visibility.Collapsed : Visibility.Visible;
         WeekdaysPanel.Visibility = WeeklyRadio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -51,7 +51,7 @@ public partial class RepeatRuleWindow : Window
         for (var day = 0; day < 7; day++) if (_days[day].IsChecked == true) mask |= 1 << day;
         if (WeeklyRadio.IsChecked == true && mask == 0) { Warn("每周重复请至少选择一天。"); return; }
         TimeSpan? reminder = ReminderCheck.IsChecked == true
-            ? new TimeSpan(HourBox.SelectedIndex, MinuteBox.SelectedIndex, 0)
+            ? new TimeSpan(HourBox.SelectedIndex, MinuteBox.SelectedIndex * 5, 0)
             : null;
         try
         {

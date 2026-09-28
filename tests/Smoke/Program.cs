@@ -167,7 +167,8 @@ var noteThread = new Thread(() =>
         repeatPickerReady = repeatWindow.WindowStyle == WindowStyle.None && repeatWindow.AllowsTransparency
             && dailyHidden && weeklyShown && dailyHiddenAgain
             && !hourPicker.IsEditable && !minutePicker.IsEditable
-            && hourPicker.Items.Count == 24 && minutePicker.Items.Count == 60
+            && hourPicker.Items.Count == 24 && minutePicker.Items.Count == 12
+            && (string)minutePicker.Items[1] == "05" && (string)minutePicker.Items[11] == "55"
             && hourPicker.SelectedIndex == 9 && minutePicker.SelectedIndex == 0;
         noteTask.Note = "便签中的内容";
         noteWindow.FlushEdits();
