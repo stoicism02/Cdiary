@@ -10,13 +10,15 @@
 dotnet run
 ```
 
-当前 Windows x64 程序位于 `dist\win-x64-time-picker\Cdiary.exe`。这是依赖 .NET 10 Desktop Runtime 的小体积版本；在其他电脑上运行前需安装该运行时。发布目录中的文件需要一起保留。重新生成发布版：
+当前 Windows x64 程序位于 `dist\win-x64-mascot\Cdiary.exe`。这是依赖 .NET 10 Desktop Runtime 的小体积版本；在其他电脑上运行前需安装该运行时。发布目录中的文件需要一起保留。重新生成发布版：
 
 ```powershell
-dotnet publish Cdiary.csproj -c Release -r win-x64 --self-contained false -o dist\win-x64-time-picker
+dotnet publish Cdiary.csproj -c Release -r win-x64 --self-contained false -o dist\win-x64-mascot
 ```
 
 支持切换日期、添加和删除任务、勾选完成、编辑任务标题与笔记、填写当天备忘，以及为任务设置一次提醒。数据自动保存在 `%LocalAppData%\Cdiary\cdiary.db`。关闭窗口时程序缩到系统托盘，继续处理提醒；通过托盘菜单可重新打开或真正退出。再次启动时会合并提示程序未运行期间错过的未完成任务提醒。
+
+原创少女图标的源图在 `Assets\AppMascot.png`，多尺寸 Windows 图标在 `Assets\Cdiary.ico`，用于程序文件、任务栏窗口和托盘。
 
 选中任务后点击“弹出便签”，可以把这项任务的标题和笔记放在独立小窗口中编辑。每项任务只会打开一个便签；便签可拖动、调整大小、切换置顶，主窗口缩到托盘后仍可使用。修改自动保存，并与主界面的笔记同步。
 

@@ -8,6 +8,7 @@ public partial class App : System.Windows.Application
 {
     private Mutex? _singleInstance;
     private Forms.NotifyIcon? _tray;
+    private System.Drawing.Icon? _appIcon;
     private ReminderScheduler? _scheduler;
     private MainWindow? _window;
     private (DateTime Date, long Id)? _notificationTarget;
@@ -47,6 +48,7 @@ public partial class App : System.Windows.Application
 
     private void CreateTray()
     {
+        _appIcon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!);
         var menu = new Forms.ContextMenuStrip();
         var openItem = new Forms.ToolStripMenuItem("打开小岛日记");
         openItem.Click += (_, _) => Dispatcher.Invoke(ShowWindow);
@@ -58,7 +60,7 @@ public partial class App : System.Windows.Application
 
         _tray = new Forms.NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = _appIcon ?? System.Drawing.SystemIcons.Application,
             Text = "小岛日记",
             ContextMenuStrip = menu,
             Visible = true
@@ -113,6 +115,7 @@ public partial class App : System.Windows.Application
             _tray.ContextMenuStrip?.Dispose();
             _tray.Dispose();
         }
+        _appIcon?.Dispose();
         if (_singleInstance is not null)
         {
             try { _singleInstance.ReleaseMutex(); }

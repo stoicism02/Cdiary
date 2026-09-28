@@ -1,5 +1,5 @@
 <Window x:Class="Cdiary.RepeatRuleWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="设置重复" Width="445"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="设置重复" Icon="/Cdiary;component/Assets/Cdiary.ico" Width="445"
         SizeToContent="Height" WindowStartupLocation="CenterOwner" WindowStyle="None"
         AllowsTransparency="True" ResizeMode="NoResize" ShowInTaskbar="False"
         Background="Transparent" FontFamily="Microsoft YaHei UI" Foreground="#725D42">
