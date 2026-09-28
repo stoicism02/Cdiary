@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Data;
 using Forms = System.Windows.Forms;
@@ -32,6 +33,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private int _searchVersion;
     private int _completedFilterDays;
     private List<DiaryTask> _completedTasks = [];
+    private DateTime _calendarMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime _calendarSelectedDate = DateTime.Today;
 
     public MainWindow(DiaryRepository repository, ReminderScheduler scheduler)
     {
@@ -54,6 +57,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public ObservableCollection<DayOption> Days { get; } = new();
     public ObservableCollection<SearchResult> SearchResults { get; } = new();
     public ObservableCollection<CompletedDayGroup> CompletedGroups { get; } = new();
+    public ObservableCollection<CalendarDay> CalendarDays { get; } = new();
+    public string CalendarMonthLabel => _calendarMonth.ToString("yyyy年M月", _chinese);
     public ICollectionView ActiveTasks { get; private set; }
     public bool HasActiveTasks => Tasks.Any(task => !task.IsDone);
     public string EmptyTaskMessage => Tasks.Count == 0 ? "这一天还没有安排任务" : "待办已清空，完成的任务在左侧“完成”里";
@@ -199,6 +204,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         HomeTab.IsChecked = true;
         HomePage.Visibility = Visibility.Visible;
+        CalendarPage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Collapsed;
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
@@ -208,6 +214,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         SearchTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
+        CalendarPage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Visible;
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
@@ -218,6 +225,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         SettingsTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
+        CalendarPage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Collapsed;
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Visible;
@@ -229,10 +237,47 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         FlushEdits();
         CompletedTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
+        CalendarPage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
         CompletedPage.Visibility = Visibility.Visible;
         ReloadCompleted();
+    }
+
+    private void ShowCalendarPage()
+    {
+        FlushEdits();
+        _calendarSelectedDate = _selectedDate;
+        _calendarMonth = new DateTime(_selectedDate.Year, _selectedDate.Month, 1);
+        CalendarTab.IsChecked = true;
+        HomePage.Visibility = Visibility.Collapsed;
+        SearchPage.Visibility = Visibility.Collapsed;
+        CompletedPage.Visibility = Visibility.Collapsed;
+        SettingsPage.Visibility = Visibility.Collapsed;
+        CalendarPage.Visibility = Visibility.Visible;
+        RefreshCalendar();
+    }
+
+    private void RefreshCalendar()
+    {
+        var first = _calendarMonth;
+        var visibleStart = first.AddDays(-(int)first.DayOfWeek);
+        var daysNeeded = (int)first.DayOfWeek + DateTime.DaysInMonth(first.Year, first.Month);
+        var cellCount = Math.Max(35, ((daysNeeded + 6) / 7) * 7);
+        var entries = _repository.LoadCalendarEntries(visibleStart, visibleStart.AddDays(cellCount))
+            .GroupBy(entry => entry.Date).ToDictionary(group => group.Key, group => (IReadOnlyList<CalendarEntry>)group.ToList());
+        CalendarDays.Clear();
+        for (var day = 0; day < cellCount; day++)
+        {
+            var date = visibleStart.AddDays(day);
+            var dayEntries = entries.GetValueOrDefault(date) ?? [];
+            var visibleLimit = cellCount == 42
+                ? dayEntries.Count > 2 ? 1 : 2
+                : dayEntries.Count > 3 ? 2 : 3;
+            CalendarDays.Add(new CalendarDay(date, first, _calendarSelectedDate,
+                dayEntries, visibleLimit));
+        }
+        Changed(nameof(CalendarMonthLabel));
     }
 
     private void ReloadCompleted()
@@ -274,6 +319,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Changed(nameof(EmptyTaskMessage));
                 if (task.IsDone && ReferenceEquals(SelectedTask, task)) SelectedTask = null;
                 if (CompletedPage.Visibility == Visibility.Visible) ReloadCompleted();
+                if (CalendarPage.Visibility == Visibility.Visible) RefreshCalendar();
             }
         }
         else QueueSave();
@@ -334,9 +380,59 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OpenDate(DateTime.Today);
     }
     private void HomeTab_Click(object sender, RoutedEventArgs e) => ShowHomePage();
+    private void CalendarTab_Click(object sender, RoutedEventArgs e) => ShowCalendarPage();
     private void SearchTab_Click(object sender, RoutedEventArgs e) => ShowSearchPage();
     private void CompletedTab_Click(object sender, RoutedEventArgs e) => ShowCompletedPage();
     private void SettingsTab_Click(object sender, RoutedEventArgs e) => ShowSettingsPage();
+
+    private void CalendarPrevious_Click(object sender, RoutedEventArgs e) => MoveCalendarMonth(-1);
+    private void CalendarNext_Click(object sender, RoutedEventArgs e) => MoveCalendarMonth(1);
+
+    private void MoveCalendarMonth(int offset)
+    {
+        _calendarMonth = _calendarMonth.AddMonths(offset);
+        _calendarSelectedDate = new DateTime(_calendarMonth.Year, _calendarMonth.Month,
+            Math.Min(_calendarSelectedDate.Day, DateTime.DaysInMonth(_calendarMonth.Year, _calendarMonth.Month)));
+        RefreshCalendar();
+    }
+
+    private void CalendarToday_Click(object sender, RoutedEventArgs e)
+    {
+        _calendarSelectedDate = DateTime.Today;
+        _calendarMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        RefreshCalendar();
+    }
+
+    private void CalendarAdd_Click(object sender, RoutedEventArgs e)
+    {
+        ShowHomePage();
+        OpenDate(_calendarSelectedDate);
+        Dispatcher.BeginInvoke(new Action(() => NewTaskBox.Focus()), DispatcherPriority.Input);
+    }
+
+    private void CalendarDay_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Border { DataContext: CalendarDay day }) return;
+        for (DependencyObject? current = e.OriginalSource as DependencyObject; current is not null && current != sender;
+             current = current is Visual ? VisualTreeHelper.GetParent(current) : LogicalTreeHelper.GetParent(current))
+            if (current is System.Windows.Controls.Button) return;
+        _calendarSelectedDate = day.Date;
+        ShowHomePage();
+        OpenDate(day.Date);
+    }
+
+    private void CalendarTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { DataContext: CalendarEntry entry }) return;
+        _calendarSelectedDate = entry.Date;
+        ShowHomePage();
+        OpenDate(entry.Date);
+        SelectedTask = entry.TaskId is long id
+            ? Tasks.FirstOrDefault(task => task.Id == id)
+            : Tasks.FirstOrDefault(task => task.RecurrenceRuleId == entry.RuleId);
+        if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
+        e.Handled = true;
+    }
 
     private void CompletedFilter_Click(object sender, RoutedEventArgs e)
     {
@@ -487,6 +583,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _repository.SaveTask(task);
         _scheduler.Refresh();
         if (CompletedPage.Visibility == Visibility.Visible) ReloadCompleted();
+        if (CalendarPage.Visibility == Visibility.Visible) RefreshCalendar();
     }
 
     private void OpenNote_Click(object sender, RoutedEventArgs e)

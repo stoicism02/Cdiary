@@ -114,6 +114,55 @@ public sealed class DiaryRepository
         return result;
     }
 
+    public List<CalendarEntry> LoadCalendarEntries(DateTime start, DateTime endExclusive)
+    {
+        start = start.Date;
+        endExclusive = endExclusive.Date;
+        if (endExclusive <= start) return [];
+        using var connection = Open();
+        var entries = new List<CalendarEntry>();
+        var existing = new HashSet<(long RuleId, DateTime Date)>();
+        using (var tasks = connection.CreateCommand())
+        {
+            tasks.CommandText = "SELECT id, task_date, title, completed, recurrence_rule_id FROM tasks WHERE task_date >= $start AND task_date < $end ORDER BY task_date, id;";
+            tasks.Parameters.AddWithValue("$start", Day(start));
+            tasks.Parameters.AddWithValue("$end", Day(endExclusive));
+            using var reader = tasks.ExecuteReader();
+            while (reader.Read())
+            {
+                var date = DateTime.ParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var ruleId = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4);
+                if (ruleId is long id) existing.Add((id, date));
+                if (reader.GetInt64(3) == 0)
+                    entries.Add(new CalendarEntry(date, reader.GetString(2), reader.GetInt64(0), ruleId));
+            }
+        }
+        using (var skips = connection.CreateCommand())
+        {
+            skips.CommandText = "SELECT rule_id, task_date FROM recurrence_skips WHERE task_date >= $start AND task_date < $end;";
+            skips.Parameters.AddWithValue("$start", Day(start));
+            skips.Parameters.AddWithValue("$end", Day(endExclusive));
+            using var reader = skips.ExecuteReader();
+            while (reader.Read())
+                existing.Add((reader.GetInt64(0), DateTime.ParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        }
+        using (var rules = connection.CreateCommand())
+        {
+            rules.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, note_template, reminder_time FROM recurrence_rules WHERE start_date < $end AND (end_date IS NULL OR end_date >= $start);";
+            rules.Parameters.AddWithValue("$start", Day(start));
+            rules.Parameters.AddWithValue("$end", Day(endExclusive));
+            using var reader = rules.ExecuteReader();
+            while (reader.Read())
+            {
+                var rule = ReadRule(reader);
+                for (var date = start > DateTime.Today ? start : DateTime.Today; date < endExclusive; date = date.AddDays(1))
+                    if (rule.Includes(date) && !existing.Contains((rule.Id, date)))
+                        entries.Add(new CalendarEntry(date, rule.Title, null, rule.Id));
+            }
+        }
+        return entries.OrderBy(entry => entry.Date).ThenBy(entry => entry.IsProjected).ThenBy(entry => entry.Title).ToList();
+    }
+
     public DiaryTask AddTask(DateTime date, string title)
     {
         var now = Stamp(DateTime.Now);

@@ -25,6 +25,14 @@ var second = repository.AddTask(today, "给小花浇水");
 second.IsDone = true;
 repository.SaveTask(second);
 repository.AddTask(today, "读一会儿书");
+repository.AddTask(today, "整理桌面");
+repository.AddTask(today, "回复消息");
+repository.AddTask(today.AddDays(1), "准备周会资料");
+repository.AddTask(today.AddDays(2), "学习 WPF 布局");
+repository.AddTask(today.AddDays(5), "去公园散步");
+repository.AddTask(today.AddDays(-3), "给植物换水");
+repository.SaveRule(first, true, (1 << (int)today.DayOfWeek) | (1 << (int)today.AddDays(3).DayOfWeek),
+    "整理明天的计划", first.Note, null);
 repository.SaveDayMemo(today, "今天慢慢来，先做好眼前的事。");
 
 var scheduler = new ReminderScheduler(repository, Dispatcher.CurrentDispatcher, _ => { });
@@ -33,6 +41,13 @@ var root = (FrameworkElement)window.Content;
 
 Render(root, Path.Combine(output, "preview-home.png"));
 ((UIElement)window.FindName("HomePage")!).Visibility = Visibility.Collapsed;
+((RadioButton)window.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+Render(root, Path.Combine(output, "preview-calendar.png"));
+for (var month = 0; month < 4; month++)
+    ((Button)window.FindName("CalendarNextButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+Render(root, Path.Combine(output, "preview-calendar-six-rows.png"));
+Render(root, Path.Combine(output, "preview-calendar-compact.png"), 1100, 580);
+((UIElement)window.FindName("CalendarPage")!).Visibility = Visibility.Collapsed;
 ((UIElement)window.FindName("SearchPage")!).Visibility = Visibility.Visible;
 ((RadioButton)window.FindName("SearchTab")!).IsChecked = true;
 Render(root, Path.Combine(output, "preview-search.png"));

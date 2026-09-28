@@ -34,6 +34,15 @@ System.Windows.Controls.CheckBox? FindTaskCheckBox(DependencyObject root, long i
     return null;
 }
 
+System.Windows.Controls.Button? FindCalendarTaskButton(DependencyObject root, long id)
+{
+    if (root is System.Windows.Controls.Button { DataContext: CalendarEntry { TaskId: var taskId } } button && taskId == id)
+        return button;
+    for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        if (FindCalendarTaskButton(VisualTreeHelper.GetChild(root, index), id) is { } found) return found;
+    return null;
+}
+
 Check(repository.LoadTasks(date).Count == 0, "初始任务为空");
 Check(repository.NextReminder(date) is null, "初始无提醒");
 
@@ -90,6 +99,21 @@ repeatRepository.SaveRule(templateTask, false, 0, "每天散步", "出门十分�
 repeatRepository.EnsureOccurrences(start.AddDays(2));
 Check(repeatRepository.LoadTasks(start.AddDays(1)).Single().Note == "这天已经完成"
     && repeatRepository.LoadTasks(start.AddDays(2)).Single().Title == "每天散步", "更新规则不覆盖已有记录");
+var previewDay = start.AddDays(4);
+var projected = repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Single();
+Check(projected.IsProjected && projected.RuleId == dailyId && repeatRepository.LoadTasks(previewDay).Count == 0,
+    "月历预览重复任务而不写入数据库");
+repeatRepository.EnsureOccurrences(previewDay);
+var materialized = repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Single();
+Check(materialized.TaskId is not null && !materialized.IsProjected, "打开日期后月历使用已生成任务");
+var completedPreviewTask = repeatRepository.LoadTasks(previewDay).Single();
+completedPreviewTask.IsDone = true;
+repeatRepository.SaveTask(completedPreviewTask);
+Check(repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Count == 0,
+    "已完成任务不显示在月历待办中");
+repeatRepository.DeleteTask(completedPreviewTask.Id);
+Check(repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Count == 0,
+    "删除的重复任务不在月历重新预览");
 repeatRepository.DeleteTask(tomorrow.Id);
 Check(repeatRepository.EnsureOccurrences(start.AddDays(1)) == 0, "删掉单日任务不会重新生成");
 repeatRepository.StopRule(dailyId, start.AddDays(2));
@@ -124,6 +148,8 @@ var pinReady = false;
 var searchNavigationReady = false;
 var completionFlowReady = false;
 var stickyFilterReady = false;
+var calendarNavigationReady = false;
+var calendarAddReady = false;
 var noteThread = new Thread(() =>
 {
     try
@@ -170,6 +196,26 @@ var noteThread = new Thread(() =>
         completionFlowReady = visibleBefore && taskCheck is not null && hiddenAfter && grouped && restore is not null
             && mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id)
             && !noteRepository.LoadCompletedTasks().Any(task => task.Id == activeTask.Id);
+        ((RadioButton)mainWindow.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        var monthReady = ((UIElement)mainWindow.FindName("CalendarPage")!).Visibility == Visibility.Visible
+            && mainWindow.CalendarDays.Count is 35 or 42
+            && mainWindow.CalendarDays.Any(day => day.Date == DateTime.Today
+                && day.VisibleEntries.Any(entry => entry.TaskId == activeTask.Id));
+        ((System.Windows.Controls.Button)mainWindow.FindName("CalendarNextButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        var nextMonth = mainWindow.CalendarMonthLabel == DateTime.Today.AddMonths(1).ToString("yyyy年M月", System.Globalization.CultureInfo.GetCultureInfo("zh-CN"));
+        ((System.Windows.Controls.Button)mainWindow.FindName("CalendarTodayButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        mainRoot.UpdateLayout();
+        var calendarButton = FindCalendarTaskButton(mainRoot, activeTask.Id);
+        calendarButton?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        calendarNavigationReady = monthReady && nextMonth && calendarButton is not null
+            && ((UIElement)mainWindow.FindName("HomePage")!).Visibility == Visibility.Visible
+            && mainWindow.SelectedTask?.Id == activeTask.Id;
+        ((RadioButton)mainWindow.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        ((System.Windows.Controls.Button)mainWindow.FindName("CalendarNextButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        ((System.Windows.Controls.Button)mainWindow.FindName("CalendarAddButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        var nextDate = DateTime.Today.AddMonths(1);
+        calendarAddReady = ((UIElement)mainWindow.FindName("HomePage")!).Visibility == Visibility.Visible
+            && mainWindow.SelectedDateLabel.StartsWith($"{nextDate.Month}月{nextDate.Day}日");
         var searchResult = noteRepository.Search("便签任务").Single();
         mainWindow.SearchResults.Add(searchResult);
         var root = (FrameworkElement)mainWindow.Content;
@@ -189,6 +235,8 @@ Check(noteThread.Join(TimeSpan.FromSeconds(5)) && noteError is null
 Check(dayReady, "当日便签加载共享任务并更新进度");
 Check(stickyFilterReady, "完成任务从当日便签清单移走");
 Check(completionFlowReady, "完成任务移入已完成并可恢复到待办");
+Check(calendarNavigationReady, "月历切换月份并定位到任务");
+Check(calendarAddReady, "月历添加入口定位到指定月份的日期");
 Check(pinReady, "图钉状态与窗口置顶同步");
 Check(searchNavigationReady, "搜索结果定位到任务");
 
