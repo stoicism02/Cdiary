@@ -1,70 +1,179 @@
 <Window x:Class="Cdiary.RepeatRuleWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="设置重复" Width="445" Height="575"
-        MinWidth="445" MinHeight="575" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        Background="#F8F8F0" FontFamily="Microsoft YaHei UI" Foreground="#725D42">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="设置重复" Width="445"
+        SizeToContent="Height" WindowStartupLocation="CenterOwner" WindowStyle="None"
+        AllowsTransparency="True" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="Transparent" FontFamily="Microsoft YaHei UI" Foreground="#725D42">
     <Window.Resources>
-        <Style TargetType="TextBox"><Setter Property="Background" Value="#FFFBE7"/><Setter Property="BorderBrush" Value="#C4B89E"/>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#FFFBE7"/><Setter Property="BorderBrush" Value="#C4B89E"/>
             <Setter Property="BorderThickness" Value="1.5"/><Setter Property="Padding" Value="10,7"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
                 <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11" Padding="{TemplateBinding Padding}">
                     <ScrollViewer x:Name="PART_ContentHost"/>
                 </Border>
-                <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#19C8B9"/></Trigger></ControlTemplate.Triggers>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
-        <Style TargetType="Button"><Setter Property="Background" Value="#DDF7F1"/><Setter Property="Foreground" Value="#0D9F94"/>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#DDF7F1"/><Setter Property="Foreground" Value="#0D9F94"/>
             <Setter Property="BorderBrush" Value="#19C8B9"/><Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Padding" Value="15,8"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="15,8"/><Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
                 <Grid>
                     <Border Background="{TemplateBinding BorderBrush}" CornerRadius="15" Margin="0,3,0,0"/>
-                    <Border x:Name="Face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="15" Padding="{TemplateBinding Padding}" Margin="0,0,0,3">
+                    <Border x:Name="Face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="15"
+                            Padding="{TemplateBinding Padding}" Margin="0,0,0,3">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                 </Grid>
-                <ControlTemplate.Triggers><Trigger Property="IsPressed" Value="True"><Setter TargetName="Face" Property="Margin" Value="0,3,0,0"/></Trigger></ControlTemplate.Triggers>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsPressed" Value="True"><Setter TargetName="Face" Property="Margin" Value="0,3,0,0"/></Trigger>
+                </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
-        <Style TargetType="CheckBox"><Setter Property="Margin" Value="0,0,7,0"/><Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
-                <Border x:Name="Chip" Width="38" Height="32" Background="#FFFBE7" BorderBrush="#D8CBB3" BorderThickness="1.5" CornerRadius="12">
+        <Style TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="Foreground" Value="#725D42"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+                <Border x:Name="Chip" Background="#FFFBE7" BorderBrush="#D8CBB3" BorderThickness="1.5"
+                        CornerRadius="14" Padding="13,7">
                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#19C8B9"/><Setter TargetName="Chip" Property="BorderBrush" Value="#0D9F94"/><Setter Property="Foreground" Value="White"/></Trigger>
-                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chip" Property="Opacity" Value="0.55"/></Trigger>
+                    <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#DDF7F1"/>
+                        <Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/><Setter Property="Foreground" Value="#0D9F94"/></Trigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="WeekdayChip" TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,0,7,0"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+                <Border x:Name="Chip" Width="38" Height="32" Background="#FFFBE7" BorderBrush="#D8CBB3"
+                        BorderThickness="1.5" CornerRadius="12">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#19C8B9"/>
+                        <Setter TargetName="Chip" Property="BorderBrush" Value="#0D9F94"/><Setter Property="Foreground" Value="White"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="ReminderToggle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="Box" Width="21" Height="21" Background="#FFFBE7" BorderBrush="#9F927D"
+                            BorderThickness="1.8" CornerRadius="7" Margin="0,0,8,0">
+                        <TextBlock x:Name="Tick" Text="✓" FontSize="14" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    </Border>
+                    <ContentPresenter VerticalAlignment="Center"/>
+                </StackPanel>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsChecked" Value="True"><Setter TargetName="Box" Property="Background" Value="#19C8B9"/>
+                        <Setter TargetName="Box" Property="BorderBrush" Value="#0D9F94"/><Setter TargetName="Tick" Property="Visibility" Value="Visible"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Padding" Value="10,5"/><Setter Property="Foreground" Value="#725D42"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem">
+                <Border x:Name="Item" Background="Transparent" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Item" Property="Background" Value="#DDF7F1"/></Trigger>
+                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="Item" Property="Background" Value="#BDF0E7"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Width" Value="69"/><Setter Property="Height" Value="35"/>
+            <Setter Property="IsEditable" Value="False"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox">
+                <Grid>
+                    <Border x:Name="Frame" Background="#FFFBE7" BorderBrush="#C4B89E" BorderThickness="1.5" CornerRadius="11">
+                        <Grid Margin="10,0,8,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="⌄" FontSize="15" Foreground="#9F927D" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                    <ToggleButton x:Name="DropDownToggle" Focusable="False" Background="Transparent" BorderThickness="0"
+                                  IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                        <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent"/></ControlTemplate></ToggleButton.Template>
+                    </ToggleButton>
+                    <Popup x:Name="PART_Popup" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                           Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                        <Border Background="#FFFBE7" BorderBrush="#C4B89E" BorderThickness="1.5" CornerRadius="11"
+                                MinWidth="69" MaxHeight="210" Padding="3">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Frame" Property="Opacity" Value="0.5"/></Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
     </Window.Resources>
-    <Border Margin="18" Padding="22" Background="#F7F3DF" CornerRadius="24">
-        <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <StackPanel><TextBlock Text="让任务按时回来  ✿" FontSize="21" FontWeight="Bold" Foreground="#794F27"/>
-                <TextBlock Text="每天会生成独立任务；完成状态和笔记互不影响。" FontSize="11" Foreground="#9F927D" Margin="0,5,0,0"/></StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,22,0,0">
-                <RadioButton x:Name="DailyRadio" Content="每天" IsChecked="True" GroupName="Frequency" Checked="FrequencyChanged" Margin="0,0,20,0"/>
+    <Border Background="#F7F3DF" BorderBrush="#D8CBB3" BorderThickness="1" CornerRadius="24" Padding="22">
+        <StackPanel>
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel MouseLeftButtonDown="Header_MouseLeftButtonDown" Cursor="SizeAll">
+                    <TextBlock Text="让任务按时回来  ✿" FontSize="21" FontWeight="Bold" Foreground="#794F27"/>
+                    <TextBlock Text="设置后，新的待办会按规则出现。" FontSize="11" Foreground="#9F927D" Margin="0,5,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="×" Width="31" Height="31" Padding="0" FontSize="19"
+                        Foreground="#AF5C53" Background="#FFF1E8" BorderBrush="#DDA99C" Click="Cancel_Click" ToolTip="关闭"/>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+                <RadioButton x:Name="DailyRadio" Content="每天" IsChecked="True" GroupName="Frequency"
+                             Checked="FrequencyChanged" Margin="0,0,9,0"/>
                 <RadioButton x:Name="WeeklyRadio" Content="每周指定日期" GroupName="Frequency" Checked="FrequencyChanged"/>
             </StackPanel>
-            <StackPanel x:Name="WeekdaysPanel" Grid.Row="2" Orientation="Horizontal" Margin="0,14,0,0" IsEnabled="False">
-                <CheckBox x:Name="Monday" Content="一"/><CheckBox x:Name="Tuesday" Content="二"/>
-                <CheckBox x:Name="Wednesday" Content="三"/><CheckBox x:Name="Thursday" Content="四"/>
-                <CheckBox x:Name="Friday" Content="五"/><CheckBox x:Name="Saturday" Content="六"/>
-                <CheckBox x:Name="Sunday" Content="日" Margin="0"/>
+            <StackPanel x:Name="WeekdaysPanel" Orientation="Horizontal" Margin="0,12,0,0" Visibility="Collapsed">
+                <CheckBox x:Name="Monday" Content="一" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Tuesday" Content="二" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Wednesday" Content="三" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Thursday" Content="四" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Friday" Content="五" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Saturday" Content="六" Style="{StaticResource WeekdayChip}"/>
+                <CheckBox x:Name="Sunday" Content="日" Style="{StaticResource WeekdayChip}" Margin="0"/>
             </StackPanel>
-            <StackPanel Grid.Row="3" Margin="0,19,0,0"><TextBlock Text="后续任务标题" FontSize="12" FontWeight="Bold"/>
-                <TextBox x:Name="TitleBox" Margin="0,6,0,0"/></StackPanel>
-            <StackPanel Grid.Row="4" Margin="0,15,0,0"><TextBlock Text="提醒时间（可留空）" FontSize="12" FontWeight="Bold"/>
-                <TextBox x:Name="ReminderBox" Margin="0,6,0,0" ToolTip="例如 14:30"/></StackPanel>
-            <StackPanel Grid.Row="5" Margin="0,15,0,0"><TextBlock Text="后续任务的初始笔记" FontSize="12" FontWeight="Bold"/>
-                <TextBox x:Name="NoteBox" Margin="0,6,0,0" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"/></StackPanel>
-            <Grid Grid.Row="6" Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <Button x:Name="StopButton" Content="停止重复" HorizontalAlignment="Left" Click="Stop_Click" Foreground="#AF5C53" Background="#FFF1E8" BorderBrush="#DDA99C"/>
-                <Button Grid.Column="1" Content="取消" Click="Cancel_Click" Margin="0,0,8,0"/>
-                <Button Grid.Column="2" Content="保存规则" Click="Save_Click" Background="#19C8B9" Foreground="White" BorderBrush="#0D9F94"/>
+            <StackPanel Margin="0,18,0,0">
+                <TextBlock Text="后续任务标题" FontSize="12" FontWeight="Bold"/>
+                <TextBox x:Name="TitleBox" Margin="0,6,0,0"/>
+            </StackPanel>
+            <StackPanel Margin="0,16,0,0">
+                <TextBlock Text="提醒时间" FontSize="12" FontWeight="Bold"/>
+                <Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <CheckBox x:Name="ReminderCheck" Content="提醒我" Style="{StaticResource ReminderToggle}"
+                              VerticalAlignment="Center" Checked="ReminderChanged" Unchecked="ReminderChanged"/>
+                    <StackPanel x:Name="TimePanel" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" IsEnabled="False">
+                        <ComboBox x:Name="HourBox" ToolTip="小时"/>
+                        <TextBlock Text="：" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0"/>
+                        <ComboBox x:Name="MinuteBox" ToolTip="分钟"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+            <TextBlock x:Name="ValidationText" Visibility="Collapsed" Foreground="#AF5C53" FontSize="11" Margin="2,12,0,0"/>
+            <Grid Margin="0,23,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Button x:Name="StopButton" Content="停止重复" HorizontalAlignment="Left" Click="Stop_Click"
+                        Foreground="#AF5C53" Background="#FFF1E8" BorderBrush="#DDA99C"/>
+                <Button Grid.Column="1" Content="取消" IsCancel="True" Click="Cancel_Click" Margin="0,0,8,0"/>
+                <Button Grid.Column="2" Content="保存规则" IsDefault="True" Click="Save_Click"
+                        Background="#19C8B9" Foreground="White" BorderBrush="#0D9F94"/>
             </Grid>
-        </Grid>
+        </StackPanel>
     </Border>
 </Window>

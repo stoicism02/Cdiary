@@ -1,7 +1,7 @@
 namespace Cdiary;
 
 public sealed record RecurrenceRule(long Id, DateTime StartDate, DateTime? EndDate,
-    bool IsWeekly, int WeekdaysMask, string Title, string NoteTemplate, TimeSpan? ReminderTime)
+    bool IsWeekly, int WeekdaysMask, string Title, TimeSpan? ReminderTime)
 {
     public bool Includes(DateTime date)
     {

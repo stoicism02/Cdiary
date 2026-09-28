@@ -86,16 +86,16 @@ var start = DateTime.Today;
 var templateTask = repeatRepository.AddTask(start, "每天喝水");
 templateTask.Note = "先喝一杯温水";
 repeatRepository.SaveTask(templateTask);
-var dailyId = repeatRepository.SaveRule(templateTask, false, 0, "每天喝水", "先喝一杯温水", new TimeSpan(9, 15, 0));
+var dailyId = repeatRepository.SaveRule(templateTask, false, 0, "每天喝水", new TimeSpan(9, 15, 0));
 Check(repeatRepository.EnsureOccurrences(start.AddDays(1)) == 1
     && repeatRepository.EnsureOccurrences(start.AddDays(1)) == 0, "每日规则只生成一次");
 var tomorrow = repeatRepository.LoadTasks(start.AddDays(1)).Single();
-Check(tomorrow.RecurrenceRuleId == dailyId && tomorrow.Note == "先喝一杯温水"
-    && tomorrow.ReminderAt == start.AddDays(1).AddHours(9).AddMinutes(15), "重复任务复制模板和提醒");
+Check(tomorrow.RecurrenceRuleId == dailyId && tomorrow.Note == ""
+    && tomorrow.ReminderAt == start.AddDays(1).AddHours(9).AddMinutes(15), "重复任务保留提醒且笔记独立为空");
 tomorrow.IsDone = true;
 tomorrow.Note = "这天已经完成";
 repeatRepository.SaveTask(tomorrow);
-repeatRepository.SaveRule(templateTask, false, 0, "每天散步", "出门十分钟", null);
+repeatRepository.SaveRule(templateTask, false, 0, "每天散步", null);
 repeatRepository.EnsureOccurrences(start.AddDays(2));
 Check(repeatRepository.LoadTasks(start.AddDays(1)).Single().Note == "这天已经完成"
     && repeatRepository.LoadTasks(start.AddDays(2)).Single().Title == "每天散步", "更新规则不覆盖已有记录");
@@ -120,7 +120,7 @@ repeatRepository.StopRule(dailyId, start.AddDays(2));
 Check(repeatRepository.EnsureOccurrences(start.AddDays(3)) == 0, "停止规则后不再生成");
 var weeklyTask = repeatRepository.AddTask(start, "每周检查");
 var nextDay = start.AddDays(1);
-repeatRepository.SaveRule(weeklyTask, true, 1 << (int)nextDay.DayOfWeek, "每周检查", "", null);
+repeatRepository.SaveRule(weeklyTask, true, 1 << (int)nextDay.DayOfWeek, "每周检查", null);
 Check(repeatRepository.EnsureOccurrences(nextDay) == 1
     && repeatRepository.EnsureOccurrences(nextDay.AddDays(1)) == 0, "每周规则只在选定星期生成");
 Check(StartupSettings.BuildCommand(@"C:\Program Files\Cdiary\Cdiary.exe")
@@ -150,11 +150,25 @@ var completionFlowReady = false;
 var stickyFilterReady = false;
 var calendarNavigationReady = false;
 var calendarAddReady = false;
+var repeatPickerReady = false;
 var noteThread = new Thread(() =>
 {
     try
     {
         var noteWindow = new TaskNoteWindow(noteTask, noteRepository);
+        var repeatWindow = new RepeatRuleWindow(noteRepository, noteTask);
+        var dailyHidden = ((UIElement)repeatWindow.FindName("WeekdaysPanel")!).Visibility == Visibility.Collapsed;
+        ((RadioButton)repeatWindow.FindName("WeeklyRadio")!).IsChecked = true;
+        var weeklyShown = ((UIElement)repeatWindow.FindName("WeekdaysPanel")!).Visibility == Visibility.Visible;
+        ((RadioButton)repeatWindow.FindName("DailyRadio")!).IsChecked = true;
+        var dailyHiddenAgain = ((UIElement)repeatWindow.FindName("WeekdaysPanel")!).Visibility == Visibility.Collapsed;
+        var hourPicker = (ComboBox)repeatWindow.FindName("HourBox")!;
+        var minutePicker = (ComboBox)repeatWindow.FindName("MinuteBox")!;
+        repeatPickerReady = repeatWindow.WindowStyle == WindowStyle.None && repeatWindow.AllowsTransparency
+            && dailyHidden && weeklyShown && dailyHiddenAgain
+            && !hourPicker.IsEditable && !minutePicker.IsEditable
+            && hourPicker.Items.Count == 24 && minutePicker.Items.Count == 60
+            && hourPicker.SelectedIndex == 9 && minutePicker.SelectedIndex == 0;
         noteTask.Note = "便签中的内容";
         noteWindow.FlushEdits();
         var sharedTasks = new ObservableCollection<DiaryTask> { noteTask };
@@ -239,6 +253,7 @@ Check(calendarNavigationReady, "月历切换月份并定位到任务");
 Check(calendarAddReady, "月历添加入口定位到指定月份的日期");
 Check(pinReady, "图钉状态与窗口置顶同步");
 Check(searchNavigationReady, "搜索结果定位到任务");
+Check(repeatPickerReady, "重复设置使用无系统边框窗口和时间选择，日期仅在每周显示");
 
 var clockPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "clock.db");
 var clockRepository = new DiaryRepository(clockPath);

@@ -32,7 +32,7 @@ repository.AddTask(today.AddDays(2), "学习 WPF 布局");
 repository.AddTask(today.AddDays(5), "去公园散步");
 repository.AddTask(today.AddDays(-3), "给植物换水");
 repository.SaveRule(first, true, (1 << (int)today.DayOfWeek) | (1 << (int)today.AddDays(3).DayOfWeek),
-    "整理明天的计划", first.Note, null);
+    "整理明天的计划", null);
 repository.SaveDayMemo(today, "今天慢慢来，先做好眼前的事。");
 
 var scheduler = new ReminderScheduler(repository, Dispatcher.CurrentDispatcher, _ => { });
@@ -59,7 +59,13 @@ Render(root, Path.Combine(output, "preview-completed.png"));
 ((RadioButton)window.FindName("SettingsTab")!).IsChecked = true;
 Render(root, Path.Combine(output, "preview-settings.png"));
 var repeat = new RepeatRuleWindow(repository, first);
-Render((FrameworkElement)repeat.Content, Path.Combine(output, "preview-repeat.png"), 445, 575);
+var repeatRoot = (FrameworkElement)repeat.Content;
+((RadioButton)repeat.FindName("DailyRadio")!).IsChecked = true;
+repeatRoot.Measure(new Size(445, double.PositiveInfinity));
+Render(repeatRoot, Path.Combine(output, "preview-repeat-daily.png"), 445, (int)Math.Ceiling(repeatRoot.DesiredSize.Height));
+((RadioButton)repeat.FindName("WeeklyRadio")!).IsChecked = true;
+repeatRoot.Measure(new Size(445, double.PositiveInfinity));
+Render(repeatRoot, Path.Combine(output, "preview-repeat-weekly.png"), 445, (int)Math.Ceiling(repeatRoot.DesiredSize.Height));
 }
 
 static void Render(FrameworkElement root, string path, int width = 1100, int height = 720)

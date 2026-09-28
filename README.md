@@ -10,10 +10,10 @@
 dotnet run
 ```
 
-当前 Windows x64 程序位于 `dist\win-x64-calendar\Cdiary.exe`。这是依赖 .NET 10 Desktop Runtime 的小体积版本；在其他电脑上运行前需安装该运行时。发布目录中的文件需要一起保留。重新生成发布版：
+当前 Windows x64 程序位于 `dist\win-x64-repeat-picker\Cdiary.exe`。这是依赖 .NET 10 Desktop Runtime 的小体积版本；在其他电脑上运行前需安装该运行时。发布目录中的文件需要一起保留。重新生成发布版：
 
 ```powershell
-dotnet publish Cdiary.csproj -c Release -r win-x64 --self-contained false -o dist\win-x64-calendar
+dotnet publish Cdiary.csproj -c Release -r win-x64 --self-contained false -o dist\win-x64-repeat-picker
 ```
 
 支持切换日期、添加和删除任务、勾选完成、编辑任务标题与笔记、填写当天备忘，以及为任务设置一次提醒。数据自动保存在 `%LocalAppData%\Cdiary\cdiary.db`。关闭窗口时程序缩到系统托盘，继续处理提醒；通过托盘菜单可重新打开或真正退出。再次启动时会合并提示程序未运行期间错过的未完成任务提醒。
@@ -26,7 +26,7 @@ dotnet publish Cdiary.csproj -c Release -r win-x64 --self-contained false -o dis
 
 日历页展示整月待办，可切换月份、回到今天、打开某一天或某个任务，并在当前选中的日期添加任务。任务较多时显示剩余数量。未来重复任务会以预览纸条显示；翻阅月份不会批量创建任务，打开具体日期时才生成该天实例。
 
-任务详情里的“设置重复”支持每天或每周指定日期。后续任务按需生成，每天的完成状态和笔记独立；修改规则只影响尚未生成的任务。删掉单日任务后，当天不会重新生成；停止重复会保留已有记录。
+任务详情里的“设置重复”支持每天或每周指定日期；只有选择每周时才显示星期选项。提醒时间用小时、分钟下拉框选择。后续任务按需生成，笔记初始为空，每天的完成状态和笔记独立；修改规则只影响尚未生成的任务。删掉单日任务后，当天不会重新生成；停止重复会保留已有记录。
 
 设置页可选择登录 Windows 后自动在后台启动，默认关闭。后台启动时只显示托盘图标，需要时可从托盘打开主窗口。提醒依赖程序运行。Windows 的通知设置或免打扰模式可能影响提醒展示。
 

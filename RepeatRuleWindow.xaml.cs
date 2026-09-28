@@ -1,6 +1,5 @@
-using System.Globalization;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Cdiary;
 
@@ -22,15 +21,26 @@ public partial class RepeatRuleWindow : Window
         var mask = rule?.WeekdaysMask ?? 1 << (int)task.Date.DayOfWeek;
         for (var day = 0; day < 7; day++) _days[day].IsChecked = (mask & (1 << day)) != 0;
         TitleBox.Text = rule?.Title ?? task.Title;
-        NoteBox.Text = rule?.NoteTemplate ?? task.Note;
-        ReminderBox.Text = rule?.ReminderTime?.ToString(@"hh\:mm") ?? task.ReminderLabel;
+        HourBox.ItemsSource = Enumerable.Range(0, 24).Select(hour => hour.ToString("00")).ToArray();
+        MinuteBox.ItemsSource = Enumerable.Range(0, 60).Select(minute => minute.ToString("00")).ToArray();
+        var reminder = rule?.ReminderTime ?? task.ReminderTime;
+        HourBox.SelectedIndex = reminder?.Hours ?? 9;
+        MinuteBox.SelectedIndex = reminder?.Minutes ?? 0;
+        ReminderCheck.IsChecked = reminder is not null;
         StopButton.Visibility = rule is null || rule.EndDate is not null ? Visibility.Collapsed : Visibility.Visible;
-        WeekdaysPanel.IsEnabled = WeeklyRadio.IsChecked == true;
+        WeekdaysPanel.Visibility = WeeklyRadio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        TimePanel.IsEnabled = ReminderCheck.IsChecked == true;
     }
 
     private void FrequencyChanged(object sender, RoutedEventArgs e)
     {
-        if (WeekdaysPanel is not null) WeekdaysPanel.IsEnabled = WeeklyRadio.IsChecked == true;
+        if (WeekdaysPanel is not null)
+            WeekdaysPanel.Visibility = WeeklyRadio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ReminderChanged(object sender, RoutedEventArgs e)
+    {
+        if (TimePanel is not null) TimePanel.IsEnabled = ReminderCheck.IsChecked == true;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -40,18 +50,12 @@ public partial class RepeatRuleWindow : Window
         var mask = 0;
         for (var day = 0; day < 7; day++) if (_days[day].IsChecked == true) mask |= 1 << day;
         if (WeeklyRadio.IsChecked == true && mask == 0) { Warn("每周重复请至少选择一天。"); return; }
-        TimeSpan? reminder = null;
-        var reminderText = ReminderBox.Text.Trim();
-        if (reminderText.Length > 0)
-        {
-            if (!TimeSpan.TryParseExact(reminderText, @"hh\:mm", CultureInfo.InvariantCulture, out var time)
-                || time >= TimeSpan.FromDays(1))
-            { Warn("提醒时间请使用 00:00 至 23:59，例如 14:30。"); return; }
-            reminder = time;
-        }
+        TimeSpan? reminder = ReminderCheck.IsChecked == true
+            ? new TimeSpan(HourBox.SelectedIndex, MinuteBox.SelectedIndex, 0)
+            : null;
         try
         {
-            _repository.SaveRule(_task, WeeklyRadio.IsChecked == true, mask, title, NoteBox.Text, reminder);
+            _repository.SaveRule(_task, WeeklyRadio.IsChecked == true, mask, title, reminder);
             DialogResult = true;
         }
         catch (Exception error) { Warn($"保存失败：{error.Message}"); }
@@ -69,5 +73,14 @@ public partial class RepeatRuleWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
-    private void Warn(string message) => System.Windows.MessageBox.Show(this, message, "重复任务", MessageBoxButton.OK, MessageBoxImage.Information);
+    private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+    }
+
+    private void Warn(string message)
+    {
+        ValidationText.Text = message;
+        ValidationText.Visibility = Visibility.Visible;
+    }
 }

@@ -148,7 +148,7 @@ public sealed class DiaryRepository
         }
         using (var rules = connection.CreateCommand())
         {
-            rules.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, note_template, reminder_time FROM recurrence_rules WHERE start_date < $end AND (end_date IS NULL OR end_date >= $start);";
+            rules.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, reminder_time FROM recurrence_rules WHERE start_date < $end AND (end_date IS NULL OR end_date >= $start);";
             rules.Parameters.AddWithValue("$start", Day(start));
             rules.Parameters.AddWithValue("$end", Day(endExclusive));
             using var reader = rules.ExecuteReader();
@@ -236,14 +236,14 @@ public sealed class DiaryRepository
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, note_template, reminder_time FROM recurrence_rules WHERE id=$id;";
+        command.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, reminder_time FROM recurrence_rules WHERE id=$id;";
         command.Parameters.AddWithValue("$id", id);
         using var reader = command.ExecuteReader();
         return reader.Read() ? ReadRule(reader) : null;
     }
 
     public long SaveRule(DiaryTask source, bool weekly, int weekdaysMask,
-        string title, string noteTemplate, TimeSpan? reminderTime, DateTime? endDate = null)
+        string title, TimeSpan? reminderTime, DateTime? endDate = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("任务名称不能为空。", nameof(title));
         if (weekly && (weekdaysMask & 127) == 0) throw new ArgumentException("请至少选择一天。", nameof(weekdaysMask));
@@ -255,7 +255,7 @@ public sealed class DiaryRepository
             using var update = connection.CreateCommand();
             update.Transaction = transaction;
             update.CommandText = "UPDATE recurrence_rules SET is_weekly=$weekly, weekdays_mask=$mask, title=$title, note_template=$note, reminder_time=$reminder, end_date=$end WHERE id=$id;";
-            FillRuleParameters(update, weekly, weekdaysMask, title, noteTemplate, reminderTime, endDate);
+            FillRuleParameters(update, weekly, weekdaysMask, title, reminderTime, endDate);
             update.Parameters.AddWithValue("$id", existing);
             if (update.ExecuteNonQuery() != 1) throw new InvalidOperationException("重复规则不存在。 ");
             id = existing;
@@ -265,7 +265,7 @@ public sealed class DiaryRepository
             using var insert = connection.CreateCommand();
             insert.Transaction = transaction;
             insert.CommandText = "INSERT INTO recurrence_rules(start_date, end_date, is_weekly, weekdays_mask, title, note_template, reminder_time) VALUES($start, $end, $weekly, $mask, $title, $note, $reminder); SELECT last_insert_rowid();";
-            FillRuleParameters(insert, weekly, weekdaysMask, title, noteTemplate, reminderTime, endDate);
+            FillRuleParameters(insert, weekly, weekdaysMask, title, reminderTime, endDate);
             insert.Parameters.AddWithValue("$start", Day(source.Date));
             id = (long)(insert.ExecuteScalar() ?? throw new InvalidOperationException("无法创建重复规则。"));
             using var link = connection.CreateCommand();
@@ -298,7 +298,7 @@ public sealed class DiaryRepository
         using var transaction = connection.BeginTransaction();
         using var rules = connection.CreateCommand();
         rules.Transaction = transaction;
-        rules.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, note_template, reminder_time FROM recurrence_rules WHERE start_date <= $date AND (end_date IS NULL OR end_date >= $date);";
+        rules.CommandText = "SELECT id, start_date, end_date, is_weekly, weekdays_mask, title, reminder_time FROM recurrence_rules WHERE start_date <= $date AND (end_date IS NULL OR end_date >= $date);";
         rules.Parameters.AddWithValue("$date", Day(date));
         var matching = new List<RecurrenceRule>();
         using (var reader = rules.ExecuteReader())
@@ -315,7 +315,7 @@ public sealed class DiaryRepository
             insert.CommandText = "INSERT OR IGNORE INTO tasks(task_date,title,note,completed,reminder_at,notified_at,recurrence_rule_id,created_at,updated_at) SELECT $date,$title,$note,0,$reminder,NULL,$rule,$now,$now WHERE NOT EXISTS (SELECT 1 FROM recurrence_skips WHERE rule_id=$rule AND task_date=$date);";
             insert.Parameters.AddWithValue("$date", Day(date));
             insert.Parameters.AddWithValue("$title", rule.Title);
-            insert.Parameters.AddWithValue("$note", rule.NoteTemplate);
+            insert.Parameters.AddWithValue("$note", "");
             insert.Parameters.AddWithValue("$reminder", rule.ReminderTime is { } time ? Stamp(date.Add(time)) : DBNull.Value);
             insert.Parameters.AddWithValue("$rule", rule.Id);
             insert.Parameters.AddWithValue("$now", Stamp(DateTime.Now));
@@ -326,12 +326,12 @@ public sealed class DiaryRepository
     }
 
     private static void FillRuleParameters(SqliteCommand command, bool weekly, int mask,
-        string title, string note, TimeSpan? reminder, DateTime? end)
+        string title, TimeSpan? reminder, DateTime? end)
     {
         command.Parameters.AddWithValue("$weekly", weekly ? 1 : 0);
         command.Parameters.AddWithValue("$mask", mask & 127);
         command.Parameters.AddWithValue("$title", title.Trim());
-        command.Parameters.AddWithValue("$note", note);
+        command.Parameters.AddWithValue("$note", "");
         command.Parameters.AddWithValue("$reminder", reminder is { } time ? time.ToString(@"hh\:mm", CultureInfo.InvariantCulture) : DBNull.Value);
         command.Parameters.AddWithValue("$end", end is { } date ? Day(date) : DBNull.Value);
     }
@@ -339,8 +339,8 @@ public sealed class DiaryRepository
     private static RecurrenceRule ReadRule(SqliteDataReader reader)
         => new(reader.GetInt64(0), DateTime.ParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture),
             reader.IsDBNull(2) ? null : DateTime.ParseExact(reader.GetString(2), "yyyy-MM-dd", CultureInfo.InvariantCulture),
-            reader.GetInt64(3) != 0, reader.GetInt32(4), reader.GetString(5), reader.GetString(6),
-            reader.IsDBNull(7) ? null : TimeSpan.ParseExact(reader.GetString(7), @"hh\:mm", CultureInfo.InvariantCulture));
+            reader.GetInt64(3) != 0, reader.GetInt32(4), reader.GetString(5),
+            reader.IsDBNull(6) ? null : TimeSpan.ParseExact(reader.GetString(6), @"hh\:mm", CultureInfo.InvariantCulture));
 
     public string LoadDayMemo(DateTime date)
     {
