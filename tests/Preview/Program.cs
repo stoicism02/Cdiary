@@ -31,6 +31,11 @@ repository.AddTask(today.AddDays(1), "准备周会资料");
 repository.AddTask(today.AddDays(2), "学习 WPF 布局");
 repository.AddTask(today.AddDays(5), "去公园散步");
 repository.AddTask(today.AddDays(-3), "给植物换水");
+repository.AddTask(today.AddDays(-2), "整理上周的照片");
+repository.AddTask(today.AddDays(-1), "寄出小礼物");
+var pastDone = repository.AddTask(today.AddDays(-1), "已经完成的旧任务");
+pastDone.IsDone = true;
+repository.SaveTask(pastDone);
 repository.SaveRule(first, true, (1 << (int)today.DayOfWeek) | (1 << (int)today.AddDays(3).DayOfWeek),
     "整理明天的计划", null);
 repository.SaveDayMemo(today, "今天慢慢来，先做好眼前的事。");
@@ -40,6 +45,7 @@ var window = new MainWindow(repository, scheduler);
 var root = (FrameworkElement)window.Content;
 
 Render(root, Path.Combine(output, "preview-home.png"));
+Render(root, Path.Combine(output, "preview-home-compact.png"), 1100, 580);
 ((UIElement)window.FindName("HomePage")!).Visibility = Visibility.Collapsed;
 ((RadioButton)window.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 Render(root, Path.Combine(output, "preview-calendar.png"));

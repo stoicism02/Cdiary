@@ -80,6 +80,7 @@ public partial class App : System.Windows.Application
     private void ShowWindow()
     {
         if (_window is null) return;
+        _window.RefreshTodayOverview();
         _window.Show();
         if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
         _window.Activate();

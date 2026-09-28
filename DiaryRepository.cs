@@ -53,6 +53,7 @@ public sealed class DiaryRepository
             CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(task_date);
             CREATE INDEX IF NOT EXISTS idx_tasks_pending
                 ON tasks(completed, notified_at, reminder_at);
+            CREATE INDEX IF NOT EXISTS idx_tasks_overdue ON tasks(completed, task_date);
             CREATE TABLE IF NOT EXISTS day_notes (
                 note_date TEXT PRIMARY KEY,
                 content TEXT NOT NULL DEFAULT '',
@@ -108,6 +109,21 @@ public sealed class DiaryRepository
             FROM tasks WHERE task_date = $date ORDER BY id;
             """;
         command.Parameters.AddWithValue("$date", Day(date));
+        using var reader = command.ExecuteReader();
+        var result = new List<DiaryTask>();
+        while (reader.Read()) result.Add(ReadTask(reader));
+        return result;
+    }
+
+    public List<DiaryTask> LoadOverdueTasks(DateTime today)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
+            FROM tasks WHERE completed=0 AND task_date < $today ORDER BY task_date DESC, id DESC;
+            """;
+        command.Parameters.AddWithValue("$today", Day(today.Date));
         using var reader = command.ExecuteReader();
         var result = new List<DiaryTask>();
         while (reader.Read()) result.Add(ReadTask(reader));

@@ -17,11 +17,12 @@ void Check(bool condition, string label)
     Console.WriteLine($"通过：{label}");
 }
 
-System.Windows.Controls.Button? FindRestoreButton(DependencyObject root)
+System.Windows.Controls.Button? FindRestoreButton(DependencyObject root, long id)
 {
-    if (root is System.Windows.Controls.Button { Content: "恢复待办" } button) return button;
+    if (root is System.Windows.Controls.Button { Content: "恢复待办", Tag: DiaryTask task } button && task.Id == id)
+        return button;
     for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
-        if (FindRestoreButton(VisualTreeHelper.GetChild(root, index)) is { } found) return found;
+        if (FindRestoreButton(VisualTreeHelper.GetChild(root, index), id) is { } found) return found;
     return null;
 }
 
@@ -40,6 +41,15 @@ System.Windows.Controls.Button? FindCalendarTaskButton(DependencyObject root, lo
         return button;
     for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
         if (FindCalendarTaskButton(VisualTreeHelper.GetChild(root, index), id) is { } found) return found;
+    return null;
+}
+
+System.Windows.Controls.Button? FindOverdueOpenButton(DependencyObject root, long id)
+{
+    if (root is System.Windows.Controls.Button { DataContext: DiaryTask task, ToolTip: "打开原日期的任务" } button
+        && task.Id == id) return button;
+    for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        if (FindOverdueOpenButton(VisualTreeHelper.GetChild(root, index), id) is { } found) return found;
     return null;
 }
 
@@ -79,6 +89,22 @@ Check(reopened.Search("%_").Count == 1 && reopened.Search("%_")[0].TaskId == tas
 Check(reopened.Search("不存在").Count == 0, "无匹配搜索返回空结果");
 reopened.DeleteTask(task.Id);
 Check(reopened.LoadTasks(date).Count == 0, "删除任务");
+
+var overduePath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "overdue.db");
+var overdueRepository = new DiaryRepository(overduePath);
+var overdueDate = DateTime.Today;
+var olderPending = overdueRepository.AddTask(overdueDate.AddDays(-2), "前天未完成");
+var yesterdayPending = overdueRepository.AddTask(overdueDate.AddDays(-1), "昨天未完成");
+var olderDone = overdueRepository.AddTask(overdueDate.AddDays(-1), "昨天已完成");
+olderDone.IsDone = true;
+overdueRepository.SaveTask(olderDone);
+overdueRepository.AddTask(overdueDate, "今天的任务");
+overdueRepository.AddTask(overdueDate.AddDays(1), "明天的任务");
+Check(overdueRepository.LoadOverdueTasks(overdueDate).Select(task => task.Id).SequenceEqual(
+    new[] { yesterdayPending.Id, olderPending.Id }), "逾期查询只返回原日期早于今天的未完成任务");
+overdueRepository.SaveRule(olderPending, false, 0, "重复但不补过去", null);
+Check(overdueRepository.EnsureOccurrences(overdueDate.AddDays(-1)) == 0
+    && overdueRepository.LoadOverdueTasks(overdueDate).Count == 2, "逾期查询不补生成过去的重复任务");
 
 var repeatPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "repeat.db");
 var repeatRepository = new DiaryRepository(repeatPath);
@@ -150,6 +176,9 @@ var completionFlowReady = false;
 var stickyFilterReady = false;
 var calendarNavigationReady = false;
 var calendarAddReady = false;
+var overdueFlowReady = false;
+var overdueRestoreReady = false;
+var compactOverdueReady = false;
 var repeatPickerReady = false;
 var noteThread = new Thread(() =>
 {
@@ -186,11 +215,41 @@ var noteThread = new Thread(() =>
         pinReady = notePin.IsChecked == true && dayWindow.Topmost;
         using var noteScheduler = new ReminderScheduler(noteRepository, Dispatcher.CurrentDispatcher, _ => { });
         var activeTask = noteRepository.AddTask(DateTime.Today, "完成后收纳");
+        var overdueTask = noteRepository.AddTask(DateTime.Today.AddDays(-1), "逾期后完成");
+        var completedPastTask = noteRepository.AddTask(DateTime.Today.AddDays(-1), "旧已完成");
+        completedPastTask.IsDone = true;
+        noteRepository.SaveTask(completedPastTask);
         var mainWindow = new MainWindow(noteRepository, noteScheduler);
+        var overdueListed = mainWindow.OverdueTasks.Any(task => task.Id == overdueTask.Id)
+            && mainWindow.OverdueTasks.All(task => task.Id != completedPastTask.Id)
+            && ((UIElement)mainWindow.FindName("OverdueSection")!).Visibility == Visibility.Visible;
+        var progressBeforeOverdue = mainWindow.ProgressLabel;
         var visibleBefore = mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id);
         var mainRoot = (FrameworkElement)mainWindow.Content;
         mainRoot.Measure(new Size(1100, 720));
         mainRoot.Arrange(new Rect(0, 0, 1100, 720));
+        mainRoot.UpdateLayout();
+        var openOverdue = FindOverdueOpenButton(mainRoot, overdueTask.Id);
+        openOverdue?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        var openedOriginalDate = mainWindow.SelectedTask?.Id == overdueTask.Id
+            && ((UIElement)mainWindow.FindName("OverdueSection")!).Visibility == Visibility.Collapsed;
+        mainWindow.ShowTask(DateTime.Today, activeTask.Id);
+        mainRoot.Measure(new Size(1100, 720));
+        mainRoot.Arrange(new Rect(0, 0, 1100, 720));
+        mainRoot.UpdateLayout();
+        ((ListBox)mainWindow.FindName("TaskList")!).ScrollIntoView(activeTask);
+        mainRoot.UpdateLayout();
+        var overdueCheck = FindTaskCheckBox(mainRoot, overdueTask.Id);
+        if (overdueCheck is not null)
+        {
+            overdueCheck.IsChecked = true;
+            overdueCheck.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        }
+        overdueFlowReady = overdueListed && openOverdue is not null && openedOriginalDate
+            && overdueCheck is not null && !mainWindow.OverdueTasks.Any(task => task.Id == overdueTask.Id)
+            && mainWindow.ProgressLabel == progressBeforeOverdue
+            && noteRepository.LoadCompletedTasks().Any(task => task.Id == overdueTask.Id && task.Date == DateTime.Today.AddDays(-1));
+        ((ListBox)mainWindow.FindName("TaskList")!).ScrollIntoView(activeTask);
         mainRoot.UpdateLayout();
         var taskCheck = FindTaskCheckBox(mainRoot, activeTask.Id);
         if (taskCheck is not null)
@@ -206,11 +265,26 @@ var noteThread = new Thread(() =>
         completedRoot.Measure(new Size(1100, 720));
         completedRoot.Arrange(new Rect(0, 0, 1100, 720));
         completedRoot.UpdateLayout();
-        var restore = FindRestoreButton(completedRoot);
+        var restore = FindRestoreButton(completedRoot, activeTask.Id);
         restore?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
         completionFlowReady = visibleBefore && taskCheck is not null && hiddenAfter && grouped && restore is not null
             && mainWindow.ActiveTasks.Cast<DiaryTask>().Any(task => task.Id == activeTask.Id)
             && !noteRepository.LoadCompletedTasks().Any(task => task.Id == activeTask.Id);
+        completedRoot.UpdateLayout();
+        var restoreOverdue = FindRestoreButton(completedRoot, overdueTask.Id);
+        restoreOverdue?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        mainWindow.ShowTask(DateTime.Today, activeTask.Id);
+        overdueRestoreReady = restoreOverdue is not null
+            && mainWindow.OverdueTasks.Any(task => task.Id == overdueTask.Id);
+        mainRoot.Measure(new Size(1100, 580));
+        mainRoot.Arrange(new Rect(0, 0, 1100, 580));
+        mainRoot.UpdateLayout();
+        compactOverdueReady = ((UIElement)mainWindow.FindName("OverdueList")!).Visibility == Visibility.Collapsed
+            && ((UIElement)mainWindow.FindName("OverdueSection")!).Visibility == Visibility.Visible
+            && mainWindow.OverdueTasks.Count > 0;
+        mainRoot.Measure(new Size(1100, 720));
+        mainRoot.Arrange(new Rect(0, 0, 1100, 720));
+        mainRoot.UpdateLayout();
         ((RadioButton)mainWindow.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
         var monthReady = ((UIElement)mainWindow.FindName("CalendarPage")!).Visibility == Visibility.Visible
             && mainWindow.CalendarDays.Count is 35 or 42
@@ -254,6 +328,9 @@ Check(calendarNavigationReady, "月历切换月份并定位到任务");
 Check(calendarAddReady, "月历添加入口定位到指定月份的日期");
 Check(pinReady, "图钉状态与窗口置顶同步");
 Check(searchNavigationReady, "搜索结果定位到任务");
+Check(overdueFlowReady, "今日逾期区跳转原任务并可完成，不改变今日进度和原日期");
+Check(overdueRestoreReady, "从已完成恢复旧任务后重新进入今日逾期区");
+Check(compactOverdueReady, "窗口缩小时逾期区可折叠且保留今日任务空间");
 Check(repeatPickerReady, "重复设置使用无系统边框窗口和时间选择，日期仅在每周显示");
 
 var clockPath = Path.Combine(Path.GetTempPath(), "CdiarySmoke", Guid.NewGuid().ToString("N"), "clock.db");

@@ -19,6 +19,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ReminderScheduler _scheduler;
     private readonly CultureInfo _chinese = CultureInfo.GetCultureInfo("zh-CN");
     private readonly DispatcherTimer _saveTimer;
+    private readonly DispatcherTimer _dayTimer;
     private readonly HashSet<DiaryTask> _dirtyTasks = new();
     private readonly Dictionary<long, TaskNoteWindow> _noteWindows = new();
     private readonly Dictionary<DateTime, DailyTodoWindow> _dayWindows = new();
@@ -35,6 +36,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private List<DiaryTask> _completedTasks = [];
     private DateTime _calendarMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime _calendarSelectedDate = DateTime.Today;
+    private DateTime _knownToday = DateTime.Today;
+    private bool _overdueExpanded = true;
+    private bool _overdueManuallyToggled;
 
     public MainWindow(DiaryRepository repository, ReminderScheduler scheduler)
     {
@@ -43,6 +47,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => FlushEdits();
+        _dayTimer = new DispatcherTimer();
+        _dayTimer.Tick += (_, _) => RefreshForNewDay();
         SearchResults.CollectionChanged += (_, _) => Changed(nameof(HasSearchResults));
         ActiveTasks = CollectionViewSource.GetDefaultView(_tasks);
         ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
@@ -50,6 +56,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AutostartCheck.IsChecked = StartupSettings.IsEnabled;
         RefreshDays();
         OpenDate(DateTime.Today);
+        ScheduleDayChange();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -58,6 +65,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public ObservableCollection<SearchResult> SearchResults { get; } = new();
     public ObservableCollection<CompletedDayGroup> CompletedGroups { get; } = new();
     public ObservableCollection<CalendarDay> CalendarDays { get; } = new();
+    public ObservableCollection<DiaryTask> OverdueTasks { get; } = new();
+    public string OverdueCountLabel => $"之前没做完 · {OverdueTasks.Count}";
     public string CalendarMonthLabel => _calendarMonth.ToString("yyyy年M月", _chinese);
     public ICollectionView ActiveTasks { get; private set; }
     public bool HasActiveTasks => Tasks.Any(task => !task.IsDone);
@@ -183,6 +192,70 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Changed(nameof(TaskHeader));
         Changed(nameof(DayMemo));
         Changed(nameof(ProgressLabel));
+        RefreshOverdueTasks();
+    }
+
+    private void RefreshOverdueTasks()
+    {
+        foreach (var task in OverdueTasks) task.PropertyChanged -= TaskChanged;
+        OverdueTasks.Clear();
+        if (_selectedDate == DateTime.Today)
+        {
+            foreach (var row in _repository.LoadOverdueTasks(DateTime.Today))
+            {
+                var task = _noteWindows.TryGetValue(row.Id, out var noteWindow) ? noteWindow.Task
+                    : _dayWindows.TryGetValue(row.Date, out var dayWindow)
+                        ? dayWindow.Tasks.FirstOrDefault(item => item.Id == row.Id) ?? row
+                        : row;
+                task.PropertyChanged += TaskChanged;
+                OverdueTasks.Add(task);
+            }
+        }
+        UpdateOverdueSection();
+    }
+
+    private void UpdateOverdueSection()
+    {
+        OverdueSection.Visibility = _selectedDate == DateTime.Today && OverdueTasks.Count > 0
+            ? Visibility.Visible : Visibility.Collapsed;
+        OverdueList.Visibility = _overdueExpanded ? Visibility.Visible : Visibility.Collapsed;
+        OverdueToggle.Content = _overdueExpanded ? "收起" : "展开";
+        Changed(nameof(OverdueCountLabel));
+    }
+
+    private void ScheduleDayChange()
+    {
+        _dayTimer.Stop();
+        var untilTomorrow = DateTime.Today.AddDays(1).AddMilliseconds(100) - DateTime.Now;
+        _dayTimer.Interval = untilTomorrow > TimeSpan.Zero ? untilTomorrow : TimeSpan.FromMilliseconds(100);
+        _dayTimer.Start();
+    }
+
+    private void RefreshForNewDay(bool refreshOverdue = false)
+    {
+        var today = DateTime.Today;
+        if (today != _knownToday)
+        {
+            var previousToday = _knownToday;
+            _knownToday = today;
+            if (_selectedDate == previousToday && HomePage.Visibility == Visibility.Visible)
+                OpenDate(today);
+            else
+            {
+                RefreshDays();
+                RefreshOverdueTasks();
+            }
+        }
+        else if (refreshOverdue && _selectedDate == today) RefreshOverdueTasks();
+        ScheduleDayChange();
+    }
+
+    public void RefreshTodayOverview() => RefreshForNewDay(refreshOverdue: true);
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        RefreshForNewDay();
     }
 
     public void ShowTask(DateTime date, long id)
@@ -208,6 +281,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SearchPage.Visibility = Visibility.Collapsed;
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
+        if (_selectedDate == DateTime.Today) RefreshOverdueTasks();
     }
 
     private void ShowSearchPage()
@@ -314,6 +388,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Changed(nameof(ProgressLabel));
             if (e.PropertyName == nameof(DiaryTask.IsDone))
             {
+                if (task.IsDone && OverdueTasks.Remove(task))
+                {
+                    task.PropertyChanged -= TaskChanged;
+                    UpdateOverdueSection();
+                }
                 ActiveTasks.Refresh();
                 Changed(nameof(HasActiveTasks));
                 Changed(nameof(EmptyTaskMessage));
@@ -354,6 +433,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         foreach (var dayWindow in _dayWindows.Values.ToArray()) dayWindow.Close();
         foreach (var noteWindow in _noteWindows.Values.ToArray()) noteWindow.Close();
+        _dayTimer.Stop();
         base.OnClosing(e);
     }
 
@@ -378,6 +458,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ShowHomePage();
         OpenDate(DateTime.Today);
+    }
+    private void OverdueToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _overdueManuallyToggled = true;
+        _overdueExpanded = !_overdueExpanded;
+        UpdateOverdueSection();
+    }
+
+    private void HomePage_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_overdueManuallyToggled) return;
+        var expanded = e.NewSize.Height >= 520;
+        if (_overdueExpanded == expanded) return;
+        _overdueExpanded = expanded;
+        UpdateOverdueSection();
+    }
+
+    private void OpenOverdue_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { DataContext: DiaryTask task }) ShowTask(task.Date, task.Id);
     }
     private void HomeTab_Click(object sender, RoutedEventArgs e) => ShowHomePage();
     private void CalendarTab_Click(object sender, RoutedEventArgs e) => ShowCalendarPage();
@@ -581,6 +681,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (Tasks.Contains(task)) return;
         _repository.SaveTask(task);
+        if (_selectedDate == DateTime.Today) RefreshOverdueTasks();
         _scheduler.Refresh();
         if (CompletedPage.Visibility == Visibility.Visible) ReloadCompleted();
         if (CalendarPage.Visibility == Visibility.Visible) RefreshCalendar();
