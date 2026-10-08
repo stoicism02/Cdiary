@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>小岛任务笔记</title>
+  <link rel="stylesheet" href="vendor/vditor/dist/index.css">
+  <link rel="stylesheet" href="island.css">
+</head>
+<body>
+  <div id="editor"></div>
+  <div id="selection-tools" role="toolbar" aria-label="选中文字格式" hidden>
+    <button data-command="bold" title="加粗 Ctrl+B"><b>B</b></button>
+    <button data-command="italic" title="斜体 Ctrl+I"><i>I</i></button>
+    <button data-command="strike" title="删除线"><s>S</s></button>
+    <button data-command="link" title="链接 Ctrl+K">链接</button>
+    <button data-command="inline-code" title="行内代码">代码</button>
+  </div>
+  <div id="slash-menu" role="listbox" aria-label="插入内容" hidden></div>
+  <footer><span id="state" role="status">正在打开笔记…</span><span><button id="source" title="编辑 Markdown 原文">源码</button><button id="finish" title="回到轻量预览并释放编辑器">完成</button></span></footer>
+  <script src="vendor/vditor/dist/js/lute/lute.min.js"></script>
+  <script src="vendor/vditor/dist/js/i18n/zh_CN.js"></script>
+  <script src="vendor/vditor/dist/js/icons/ant.js"></script>
+  <script src="vendor/vditor/dist/index.min.js"></script>
+  <script src="island.js"></script>
+</body>
+</html>

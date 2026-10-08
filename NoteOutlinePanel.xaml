@@ -1,0 +1,43 @@
+<UserControl x:Class="Cdiary.NoteOutlinePanel"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:Cdiary">
+ <UserControl.Resources><ResourceDictionary>
+  <ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries>
+  <local:OutlineActiveConverter x:Key="OutlineActive"/>
+ </ResourceDictionary></UserControl.Resources>
+ <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1" CornerRadius="13" Padding="8">
+  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <DockPanel Margin="3,0,0,7">
+    <Button DockPanel.Dock="Right" Content="×" ToolTip="收起目录" Width="24" Height="24" Padding="0" Style="{DynamicResource Pill}" Click="Close_Click"/>
+    <TextBlock Text="目录" FontFamily="Microsoft YaHei UI" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Ink}" VerticalAlignment="Center"/>
+   </DockPanel>
+   <TextBlock x:Name="EmptyHint" Grid.Row="1" Text="添加标题后，这里会显示目录。&#10;Ctrl+1～6 设置标题" TextWrapping="Wrap" FontSize="11" LineHeight="19" Foreground="{DynamicResource Muted}" Margin="3,4,3,8"/>
+   <ListBox x:Name="HeadingsList" Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch"
+     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+     PreviewMouseLeftButtonUp="List_MouseUp" PreviewKeyDown="List_KeyDown" AutomationProperties.Name="笔记章节目录">
+    <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+     <Setter Property="Padding" Value="6,7"/><Setter Property="Margin" Value="0,1"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+     <Setter Property="Foreground" Value="{DynamicResource TextInk}"/><Setter Property="Cursor" Value="Hand"/>
+     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+      <Border x:Name="Row" CornerRadius="8" Background="Transparent" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="#EDF4E8"/></Trigger>
+       <DataTrigger Value="True">
+        <DataTrigger.Binding><MultiBinding Converter="{StaticResource OutlineActive}">
+         <Binding Path="Id"/><Binding Path="ActiveHeadingId" RelativeSource="{RelativeSource AncestorType={x:Type local:NoteOutlinePanel}}"/>
+        </MultiBinding></DataTrigger.Binding>
+        <Setter TargetName="Row" Property="Background" Value="#DDF7F1"/><Setter Property="Foreground" Value="#177A70"/>
+       </DataTrigger>
+       <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Accent}"/><Setter TargetName="Row" Property="BorderThickness" Value="1"/></Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate></Setter.Value></Setter>
+    </Style></ListBox.ItemContainerStyle>
+    <ListBox.ItemTemplate><DataTemplate>
+     <TextBlock Text="{Binding Text}" Margin="{Binding Indent}" ToolTip="{Binding Text}" TextTrimming="CharacterEllipsis" FontFamily="Microsoft YaHei UI" FontSize="11"/>
+    </DataTemplate></ListBox.ItemTemplate>
+   </ListBox>
+  </Grid>
+ </Border>
+</UserControl>

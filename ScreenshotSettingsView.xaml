@@ -1,0 +1,36 @@
+<UserControl x:Class="Cdiary.ScreenshotSettingsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Cdiary" Foreground="{DynamicResource TextInk}" FontFamily="Microsoft YaHei UI">
+    <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+    <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5" CornerRadius="18" Padding="18,16">
+        <StackPanel>
+            <TextBlock Text="截图与暂存" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+            <Grid x:Name="Fields" Margin="0,14,0,0" SizeChanged="Fields_SizeChanged">
+                <Grid.ColumnDefinitions><ColumnDefinition x:Name="LabelColumn" Width="145"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <TextBlock x:Name="HotkeyLabel" Text="后台截图快捷键" VerticalAlignment="Center"/>
+                <WrapPanel x:Name="HotkeyField" Grid.Column="1">
+                    <CheckBox x:Name="EnabledCheck" IsChecked="True" Style="{DynamicResource IslandCheck}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="启用全局快捷键"/>
+                    <TextBox x:Name="HotkeyBox" MinWidth="120" MaxWidth="250" IsReadOnly="True" Style="{DynamicResource CompactInput}" PreviewKeyDown="Hotkey_KeyDown" ToolTip="点击后按新的组合键，需包含 Ctrl 或 Alt"/>
+                    <TextBlock Text="点击后按组合键" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </WrapPanel>
+                <TextBlock x:Name="DaysLabel" Grid.Row="2" Text="保留天数" VerticalAlignment="Center" Margin="0,13,0,0"/>
+                <StackPanel x:Name="DaysField" Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,13,0,0">
+                    <TextBox x:Name="DaysBox" Text="1" MaxLength="3" Style="{DynamicResource CompactInput}" ToolTip="自定义 1–365 天"/>
+                    <TextBlock Text="个自然日" VerticalAlignment="Center" FontSize="12" Margin="8,0,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="CapacityLabel" Grid.Row="4" Text="截图箱容量上限" VerticalAlignment="Center" Margin="0,13,0,0"/>
+                <StackPanel x:Name="CapacityField" Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,13,0,0">
+                    <TextBox x:Name="CapacityBox" Text="500" MaxLength="5" Style="{DynamicResource CompactInput}" ToolTip="10–10240 MB"/>
+                    <TextBlock Text="MB" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Grid>
+            <TextBlock Text="每天 00:00 清理过期图片；默认 1 天，今晚截的图也会在下一个零点清理。&#10;关机或休眠错过清理，会在下次启动或唤醒时补上。容量满后仍可复制，但暂停暂存。"
+                       Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" LineHeight="19" Margin="0,14,0,10"/>
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="SaveButton" Content="保存截图设置" Style="{DynamicResource PrimaryPill}" Padding="16,8" Click="Save_Click"/>
+                <Button x:Name="ApplyButton" Content="确认清理并保存" Visibility="Collapsed" Style="{DynamicResource DangerPill}" Padding="16,8" Click="Apply_Click" Margin="10,0,0,0"/>
+            </StackPanel>
+            <TextBlock x:Name="Status" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"/>
+        </StackPanel>
+    </Border>
+</UserControl>

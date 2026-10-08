@@ -6,6 +6,14 @@ namespace Cdiary;
 
 public sealed class DiaryRepository
 {
+    public event Action<long, FocusEndReason>? TaskEnding;
+    public List<DiaryTask> LoadFocusTasks()
+    {
+        using var connection = Open(); using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at FROM tasks WHERE completed=0 ORDER BY task_date DESC,id DESC;";
+        using var reader = command.ExecuteReader(); var tasks = new List<DiaryTask>();
+        while(reader.Read()) tasks.Add(ReadTask(reader)); return tasks;
+    }
     private const string TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffffff";
     private readonly string _connectionString;
 
@@ -24,6 +32,58 @@ public sealed class DiaryRepository
     }
 
     public string DatabasePath { get; }
+    private NoteAttachmentStore? _attachments;
+    private readonly object _attachmentGate = new();
+    public NoteAttachmentStore Attachments { get { lock(_attachmentGate) return _attachments ??= new NoteAttachmentStore(this); } }
+
+    public void BackupOriginalNote(long taskId, string content)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "INSERT OR IGNORE INTO note_originals(task_id,content,created_at) SELECT id,$note,$time FROM tasks WHERE id=$id;";
+        command.Parameters.AddWithValue("$id", taskId);
+        command.Parameters.AddWithValue("$note", content);
+        command.Parameters.AddWithValue("$time", DateTime.Now.ToString(TimestampFormat));
+        command.ExecuteNonQuery();
+    }
+
+    public void SaveDocumentNote(DiaryTask task)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        // A delayed web message must never recreate a deleted task or overwrite its other fields.
+        command.CommandText = "UPDATE tasks SET note=$note,updated_at=$time WHERE id=$id;";
+        command.Parameters.AddWithValue("$id", task.Id);
+        command.Parameters.AddWithValue("$note", task.Note);
+        command.Parameters.AddWithValue("$time", DateTime.Now.ToString(TimestampFormat));
+        command.ExecuteNonQuery();
+    }
+
+    public void SaveNoteRecovery(long taskId, string content)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO note_recovery(task_id,content,created_at) SELECT id,$note,$time FROM tasks WHERE id=$id;
+            DELETE FROM note_recovery WHERE task_id=$id AND id NOT IN
+                (SELECT id FROM note_recovery WHERE task_id=$id ORDER BY id DESC LIMIT 5);
+            """;
+        command.Parameters.AddWithValue("$id", taskId);
+        command.Parameters.AddWithValue("$note", content);
+        command.Parameters.AddWithValue("$time", DateTime.Now.ToString(TimestampFormat));
+        command.ExecuteNonQuery();
+    }
+
+    public string? ReadNoteBackup(long taskId, bool recovery = false)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = recovery
+            ? "SELECT content FROM note_recovery WHERE task_id=$id ORDER BY id DESC LIMIT 1;"
+            : "SELECT content FROM note_originals WHERE task_id=$id;";
+        command.Parameters.AddWithValue("$id", taskId);
+        return command.ExecuteScalar() as string;
+    }
 
     private SqliteConnection Open()
     {
@@ -58,6 +118,21 @@ public sealed class DiaryRepository
                 note_date TEXT PRIMARY KEY,
                 content TEXT NOT NULL DEFAULT '',
                 updated_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS note_originals (
+                task_id INTEGER PRIMARY KEY,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS note_attachments (
+                id TEXT PRIMARY KEY, extension TEXT NOT NULL, width INTEGER NOT NULL,
+                height INTEGER NOT NULL, bytes INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS note_recovery (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS recurrence_rules (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,7 +215,7 @@ public sealed class DiaryRepository
         var existing = new HashSet<(long RuleId, DateTime Date)>();
         using (var tasks = connection.CreateCommand())
         {
-            tasks.CommandText = "SELECT id, task_date, title, completed, recurrence_rule_id FROM tasks WHERE task_date >= $start AND task_date < $end ORDER BY task_date, id;";
+            tasks.CommandText = "SELECT id, task_date, title, completed, recurrence_rule_id, completed_at FROM tasks WHERE task_date >= $start AND task_date < $end ORDER BY task_date, id;";
             tasks.Parameters.AddWithValue("$start", Day(start));
             tasks.Parameters.AddWithValue("$end", Day(endExclusive));
             using var reader = tasks.ExecuteReader();
@@ -149,8 +224,8 @@ public sealed class DiaryRepository
                 var date = DateTime.ParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture);
                 var ruleId = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4);
                 if (ruleId is long id) existing.Add((id, date));
-                if (reader.GetInt64(3) == 0)
-                    entries.Add(new CalendarEntry(date, reader.GetString(2), reader.GetInt64(0), ruleId));
+                entries.Add(new CalendarEntry(date, reader.GetString(2), reader.GetInt64(0), ruleId,
+                    reader.GetInt64(3) != 0, reader.IsDBNull(5) ? null : DateTime.Parse(reader.GetString(5), CultureInfo.InvariantCulture)));
             }
         }
         using (var skips = connection.CreateCommand())
@@ -198,6 +273,7 @@ public sealed class DiaryRepository
 
     public void SaveTask(DiaryTask task)
     {
+        if(task.IsDone) TaskEnding?.Invoke(task.Id, FocusEndReason.TaskCompleted);
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
@@ -220,6 +296,7 @@ public sealed class DiaryRepository
 
     public void DeleteTask(long id)
     {
+        TaskEnding?.Invoke(id, FocusEndReason.TaskDeleted);
         using var connection = Open();
         using var transaction = connection.BeginTransaction();
         using (var skip = connection.CreateCommand())
@@ -231,7 +308,7 @@ public sealed class DiaryRepository
         }
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = "DELETE FROM tasks WHERE id=$id;";
+        command.CommandText = "DELETE FROM tasks WHERE id=$id; DELETE FROM note_originals WHERE task_id=$id; DELETE FROM note_recovery WHERE task_id=$id;";
         command.Parameters.AddWithValue("$id", id);
         command.ExecuteNonQuery();
         transaction.Commit();
