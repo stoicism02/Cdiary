@@ -66,6 +66,14 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
         if (sender is WpfCheckBox { DataContext: DiaryTask task }) _saveCompletion(task);
     }
 
+    private void TodoList_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        // Recycled rows can retain wider extent estimates during a resize. Keep
+        // focus/BringIntoView requests from moving the completion boxes offscreen.
+        if (e.OriginalSource is ScrollViewer { HorizontalOffset: > 0 } scroll)
+            scroll.ScrollToHorizontalOffset(0);
+    }
+
     private void TodoList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is not DependencyObject source) return;

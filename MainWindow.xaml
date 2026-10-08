@@ -2,86 +2,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:Cdiary"
-        Title="小岛日记" Icon="/Cdiary;component/Assets/Cdiary.ico" Width="1100" Height="720" MinWidth="970" MinHeight="580"
+        Title="小岛日记" Icon="/Cdiary;component/Assets/Cdiary.ico" Width="1100" Height="720" MinWidth="760" MinHeight="580"
         WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
-        Background="#F8F8F0" FontFamily="Microsoft YaHei UI"
-        FontSize="14" Foreground="#725D42">
+        Background="{DynamicResource WindowSurface}" FontFamily="Microsoft YaHei UI"
+        FontSize="14" Foreground="{DynamicResource TextInk}">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="82" ResizeBorderThickness="6" GlassFrameThickness="0"/>
     </shell:WindowChrome.WindowChrome>
-    <Window.Resources>
+    <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries>
         <local:CalendarGridHeightConverter x:Key="CalendarGridHeight"/>
-        <SolidColorBrush x:Key="Ink" Color="#794F27"/>
-        <SolidColorBrush x:Key="Muted" Color="#9F927D"/>
-        <SolidColorBrush x:Key="Card" Color="#F7F3DF"/>
-        <Style x:Key="Pill" TargetType="Button">
-            <Setter Property="Background" Value="#FFFBE7"/><Setter Property="Foreground" Value="#725D42"/>
-            <Setter Property="BorderBrush" Value="#C4B89E"/><Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Padding" Value="16,8"/><Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-                <Grid>
-                    <Border x:Name="Shadow" Background="{TemplateBinding BorderBrush}" CornerRadius="22" Margin="0,4,0,0"/>
-                    <Border x:Name="Face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="22"
-                            Padding="{TemplateBinding Padding}" Margin="0,0,0,4" RenderTransformOrigin="0.5,0.5">
-                        <Border.RenderTransform><TransformGroup>
-                            <ScaleTransform x:Name="HoverScale" ScaleX="1" ScaleY="1"/>
-                            <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1"/>
-                            <TranslateTransform x:Name="PressOffset" Y="0"/>
-                        </TransformGroup></Border.RenderTransform>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
-                    </Border>
-                </Grid>
-                <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Trigger.EnterActions><BeginStoryboard><Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="HoverScale" Storyboard.TargetProperty="ScaleX" To="1.035" Duration="0:0:0.14"/>
-                            <DoubleAnimation Storyboard.TargetName="HoverScale" Storyboard.TargetProperty="ScaleY" To="1.035" Duration="0:0:0.14"/>
-                        </Storyboard></BeginStoryboard></Trigger.EnterActions>
-                        <Trigger.ExitActions><BeginStoryboard><Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="HoverScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14"/>
-                            <DoubleAnimation Storyboard.TargetName="HoverScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14"/>
-                        </Storyboard></BeginStoryboard></Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="Shadow" Property="Opacity" Value="0.45"/>
-                        <Trigger.EnterActions><BeginStoryboard><Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX" To="0.94" Duration="0:0:0.09"/>
-                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY" To="0.94" Duration="0:0:0.09"/>
-                            <DoubleAnimation Storyboard.TargetName="PressOffset" Storyboard.TargetProperty="Y" To="3" Duration="0:0:0.09"/>
-                        </Storyboard></BeginStoryboard></Trigger.EnterActions>
-                        <Trigger.ExitActions><BeginStoryboard><Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.25">
-                                <DoubleAnimation.EasingFunction><BackEase Amplitude="0.4" EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.25">
-                                <DoubleAnimation.EasingFunction><BackEase Amplitude="0.4" EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                            <DoubleAnimation Storyboard.TargetName="PressOffset" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.18"/>
-                        </Storyboard></BeginStoryboard></Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter TargetName="Face" Property="Opacity" Value="0.5"/>
-                        <Setter TargetName="Shadow" Property="Opacity" Value="0.25"/>
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate></Setter.Value></Setter>
-        </Style>
-        <Style x:Key="PrimaryPill" TargetType="Button" BasedOn="{StaticResource Pill}">
-            <Setter Property="Background" Value="#19C8B9"/><Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#0D9F94"/><Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Padding" Value="20,10"/>
-        </Style>
-        <Style x:Key="IconPill" TargetType="Button" BasedOn="{StaticResource Pill}">
-            <Setter Property="Width" Value="31"/><Setter Property="Height" Value="31"/>
-            <Setter Property="Padding" Value="0"/><Setter Property="FontSize" Value="19"/>
-            <Setter Property="Background" Value="#FFFBEF"/><Setter Property="BorderBrush" Value="#D8CBB3"/>
-        </Style>
-        <Style x:Key="DangerPill" TargetType="Button" BasedOn="{StaticResource Pill}">
-            <Setter Property="Foreground" Value="#AF5C53"/><Setter Property="Background" Value="#FFF1E8"/>
-            <Setter Property="BorderBrush" Value="#DDA99C"/>
-        </Style>
+
         <Style x:Key="RailTab" TargetType="RadioButton">
             <Setter Property="Width" Value="48"/><Setter Property="Height" Value="55"/>
             <Setter Property="Foreground" Value="#8D806A"/><Setter Property="Cursor" Value="Hand"/>
@@ -92,10 +22,10 @@
                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="#FFFBE7"/></Trigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="{DynamicResource PaperSurface}"/></Trigger>
                     <Trigger Property="IsChecked" Value="True">
                         <Setter TargetName="Tile" Property="Background" Value="#DDF7F1"/>
-                        <Setter Property="Foreground" Value="#0D9F94"/>
+                        <Setter Property="Foreground" Value="{DynamicResource AccentOutline}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
                         <Trigger.EnterActions><BeginStoryboard><Storyboard>
@@ -114,19 +44,19 @@
             <Setter Property="Cursor" Value="Hand"/><Setter Property="Foreground" Value="#8D806A"/>
             <Setter Property="Margin" Value="0,0,8,0"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
-                <Border x:Name="Chip" Background="#FFFBE7" BorderBrush="#D8CBB3" BorderThickness="1.5"
+                <Border x:Name="Chip" Background="{DynamicResource PaperSurface}" BorderBrush="#D8CBB3" BorderThickness="1.5"
                         CornerRadius="15" Padding="14,8">
                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#DDF7F1"/>
-                        <Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/><Setter Property="Foreground" Value="#0D9F94"/></Trigger>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                        <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Accent}"/><Setter Property="Foreground" Value="{DynamicResource AccentOutline}"/></Trigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
         <Style x:Key="CalendarTaskChip" TargetType="Button">
-            <Setter Property="Background" Value="#DDF7F1"/><Setter Property="Foreground" Value="#4E6F68"/>
+            <Setter Property="Background" Value="#E7F0F2"/><Setter Property="Foreground" Value="#526F7A"/>
             <Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="6,2"/>
             <Setter Property="Margin" Value="0,0,0,3"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -135,24 +65,14 @@
                     <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                 </Border>
                 <ControlTemplate.Triggers>
-                    <DataTrigger Binding="{Binding IsProjected}" Value="True"><Setter Property="Background" Value="#E7F0F2"/>
-                        <Setter Property="Foreground" Value="#65838C"/></DataTrigger>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="Background" Value="#BDF0E7"/></Trigger>
+                    <DataTrigger Binding="{Binding State}" Value="Done"><Setter Property="Background" Value="#DDF7E9"/><Setter Property="Foreground" Value="#397457"/></DataTrigger>
+                    <DataTrigger Binding="{Binding State}" Value="Today"><Setter Property="Background" Value="#FFF0D3"/><Setter Property="Foreground" Value="#946421"/></DataTrigger>
+                    <DataTrigger Binding="{Binding State}" Value="Overdue"><Setter Property="Background" Value="#FBE2DD"/><Setter Property="Foreground" Value="#A34F45"/></DataTrigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="Opacity" Value="0.75"/></Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
-        <Style x:Key="PaperInput" TargetType="TextBox">
-            <Setter Property="Background" Value="#FFFBE7"/><Setter Property="Foreground" Value="#725D42"/>
-            <Setter Property="BorderBrush" Value="#C4B89E"/><Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Padding" Value="12,9"/>
-            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
-                <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="15" Padding="{TemplateBinding Padding}">
-                    <ScrollViewer x:Name="PART_ContentHost"/>
-                </Border>
-                <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#19C8B9"/></Trigger></ControlTemplate.Triggers>
-            </ControlTemplate></Setter.Value></Setter>
-        </Style>
+
         <Style x:Key="DayRow" TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,0,6"/><Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
@@ -163,26 +83,26 @@
         <Style x:Key="TaskRow" TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,0,9"/><Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
-                <Border x:Name="Surface" Background="#FFFBE7" BorderBrush="#E5DCC7" BorderThickness="1.5"
+                <Border x:Name="Surface" Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5"
                         CornerRadius="17" Padding="14,12"><ContentPresenter/></Border>
-                <ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="#E6F9F6"/><Setter TargetName="Surface" Property="BorderBrush" Value="#19C8B9"/></Trigger></ControlTemplate.Triggers>
+                <ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="#E6F9F6"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger></ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
         <Style x:Key="OverdueRow" TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,0,5"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
-                <Border Background="#FFFBE7" BorderBrush="#E5DCC7" BorderThickness="1.5"
+                <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5"
                         CornerRadius="13" Padding="9,7"><ContentPresenter/></Border>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
         <Style x:Key="OverdueLink" TargetType="Button">
-            <Setter Property="Foreground" Value="#725D42"/><Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextInk}"/><Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
                 <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                 <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="#0D9F94"/>
+                    <Setter Property="Foreground" Value="{DynamicResource AccentOutline}"/>
                 </Trigger></ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
@@ -191,15 +111,15 @@
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
                 <Grid Width="25" Height="25" RenderTransformOrigin="0.5,0.5">
                     <Grid.RenderTransform><ScaleTransform x:Name="CheckScale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
-                    <Border x:Name="Box" Background="#FFFBE7" BorderBrush="#9F927D" BorderThickness="2" CornerRadius="8"/>
+                    <Border x:Name="Box" Background="{DynamicResource PaperSurface}" BorderBrush="{DynamicResource Muted}" BorderThickness="2" CornerRadius="8"/>
                     <Path x:Name="Tick" Data="M 5 12 L 10 17 L 20 7" Stroke="White" StrokeThickness="2.5"
                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
                 </Grid>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
                     <Trigger Property="IsChecked" Value="True">
-                        <Setter TargetName="Box" Property="Background" Value="#19C8B9"/>
-                        <Setter TargetName="Box" Property="BorderBrush" Value="#0D9F94"/>
+                        <Setter TargetName="Box" Property="Background" Value="{DynamicResource Accent}"/>
+                        <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentOutline}"/>
                         <Setter TargetName="Tick" Property="Visibility" Value="Visible"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
@@ -216,7 +136,7 @@
                             </DoubleAnimation>
                         </Storyboard></BeginStoryboard></Trigger.ExitActions>
                     </Trigger>
-                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="#19C8B9"/></Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
@@ -233,7 +153,7 @@
                         </Track.DecreaseRepeatButton>
                         <Track.Thumb><Thumb>
                             <Thumb.Template><ControlTemplate TargetType="Thumb">
-                                <Border Background="#19C8B9" BorderBrush="#11A89B" BorderThickness="0,0,2,0" CornerRadius="7">
+                                <Border Background="{DynamicResource Accent}" BorderBrush="#11A89B" BorderThickness="0,0,2,0" CornerRadius="7">
                                     <Border Width="3" Margin="3,5,0,5" Background="#7EE4DB" CornerRadius="2" HorizontalAlignment="Left"/>
                                 </Border>
                             </ControlTemplate></Thumb.Template>
@@ -245,29 +165,29 @@
                 </Border>
             </ControlTemplate></Setter.Value></Setter>
         </Style>
-    </Window.Resources>
-    <Grid Margin="25,8,25,23">
-        <Grid.RowDefinitions><RowDefinition Height="74"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    </ResourceDictionary></Window.Resources>
+    <Grid x:Name="LayoutRoot" Margin="25,8,25,23" SizeChanged="LayoutRoot_SizeChanged">
+        <Grid.RowDefinitions><RowDefinition x:Name="HeaderRow" Height="74"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="50" Height="50" Background="#19C8B9" CornerRadius="18" Margin="0,0,13,0">
+                <Border Width="50" Height="50" Background="{DynamicResource Accent}" CornerRadius="18" Margin="0,0,13,0">
                     <TextBlock Text="✿" Foreground="White" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="小岛日记" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                    <TextBlock Text="把今天过好，一件一件来。" Foreground="{StaticResource Muted}" FontSize="11"/>
+                    <TextBlock x:Name="AppHeading" Text="小岛日记" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                    <TextBlock x:Name="BrandSubtitle" Text="把今天过好，一件一件来。" Foreground="{DynamicResource Muted}" FontSize="11"/>
                 </StackPanel>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="数据保存在此设备" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="0,0,13,0"/>
-                <Button Content="回到今天" Style="{StaticResource Pill}" Click="Today_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <Button Content="─" Style="{StaticResource IconPill}" Margin="15,0,5,0" Click="Minimize_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <Button Content="□" Style="{StaticResource IconPill}" Margin="0,0,5,0" Click="Maximize_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <Button Content="×" Style="{StaticResource IconPill}" Foreground="#AF5C53" FontSize="21" Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <TextBlock x:Name="EnvironmentStatus" Text="数据保存在此设备" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="0,0,13,0" MaxWidth="190" TextTrimming="CharacterEllipsis"/>
+                <Button Content="回到今天" Style="{DynamicResource Pill}" Click="Today_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="─" Style="{DynamicResource IconPill}" Margin="15,0,5,0" Click="Minimize_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="□" Style="{DynamicResource IconPill}" Margin="0,0,5,0" Click="Maximize_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="×" Style="{DynamicResource IconPill}" Foreground="{DynamicResource DangerInk}" FontSize="21" Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" MaxWidth="1680">
             <Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Border Grid.Column="0" Background="#F0E8D8" CornerRadius="23" Padding="6,12">
                 <StackPanel>
@@ -300,6 +220,7 @@
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
                         </StackPanel>
                     </RadioButton>
+                    <RadioButton x:Name="FocusTab" GroupName="Pages" Style="{StaticResource RailTab}" ToolTip="专注" Click="FocusTab_Click" Margin="0,9,0,0" Content="◷"/>
                     <RadioButton x:Name="SearchTab" GroupName="Pages" Style="{StaticResource RailTab}"
                                  ToolTip="搜索任务和笔记" Click="SearchTab_Click">
                         <StackPanel HorizontalAlignment="Center">
@@ -322,6 +243,15 @@
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
                         </StackPanel>
                     </RadioButton>
+                    <RadioButton x:Name="ScreenshotTab" GroupName="Pages" Style="{StaticResource RailTab}"
+                                 ToolTip="截图箱" Click="ScreenshotTab_Click" Margin="0,9,0,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Path Data="M 2,7 L 7,7 L 9,3 L 16,3 L 18,7 L 22,7 L 22,21 L 2,21 Z M 17,14 A 5,5 0 1 1 7,14 A 5,5 0 1 1 17,14"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.8" StrokeLineJoin="Round" Width="24" Height="24" HorizontalAlignment="Center"/>
+                            <TextBlock Text="截图" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="SettingsTab" GroupName="Pages" Style="{StaticResource RailTab}"
                                  ToolTip="设置" Click="SettingsTab_Click" Margin="0,9,0,0">
                         <StackPanel HorizontalAlignment="Center">
@@ -333,50 +263,62 @@
                     </RadioButton>
                 </StackPanel>
             </Border>
-            <Grid x:Name="HomePage" Grid.Column="2" SizeChanged="HomePage_SizeChanged">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*" MinWidth="335"/><ColumnDefinition Width="12"/><ColumnDefinition Width="305"/></Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="#F0E8D8" CornerRadius="24" Padding="17,20">
+            <Grid x:Name="HomePage" Grid.Column="2" SizeChanged="HomePage_SizeChanged" PreviewKeyDown="HomePage_KeyDown">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition x:Name="DateColumn" Width="0"/><ColumnDefinition x:Name="DateGap" Width="0"/><ColumnDefinition x:Name="TaskColumn" Width="1.2*"/><ColumnDefinition x:Name="NoteGap" Width="12"/><ColumnDefinition x:Name="NoteColumn" Width="*"/></Grid.ColumnDefinitions>
+            <Border x:Name="DateToolbar" Grid.ColumnSpan="5" Background="#F0E8D8" CornerRadius="17" Padding="10,7" Margin="0,0,0,12">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="‹" Style="{DynamicResource IconPill}" Click="PreviousDay_Click" ToolTip="前一天"/>
+                        <TextBlock Text="{Binding SelectedDateLabel}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0"/>
+                        <Button Content="›" Style="{DynamicResource IconPill}" Click="NextDay_Click" ToolTip="后一天"/>
+                        <Button Content="月历" Style="{DynamicResource Pill}" Padding="12,6" Margin="8,0,0,0" Click="CalendarTab_Click" ToolTip="选择其他日期"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="弹出当日待办" Style="{DynamicResource Pill}" Padding="12,6" FontSize="12" Click="OpenDay_Click"/>
+                </Grid>
+            </Border>
+            <Border x:Name="DateRail" Grid.Row="1" Grid.Column="0" Visibility="Collapsed" Background="#F0E8D8" CornerRadius="24" Padding="17,20">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                    <StackPanel><TextBlock Text="日历" FontSize="17" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="选择一天，记录生活" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/></StackPanel>
+                    <StackPanel><TextBlock Text="日历" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                        <TextBlock Text="选择一天，记录生活" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0"/></StackPanel>
                     <Grid Grid.Row="1" Margin="0,18,0,11">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="*"/><ColumnDefinition Width="26"/></Grid.ColumnDefinitions>
-                        <Button Content="‹" Style="{StaticResource IconPill}" Width="26" Height="29" Click="PreviousWeek_Click"/>
-                        <TextBlock Grid.Column="1" Text="{Binding MonthLabel}" FontWeight="Bold" Foreground="{StaticResource Ink}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Button Grid.Column="2" Content="›" Style="{StaticResource IconPill}" Width="26" Height="29" Click="NextWeek_Click"/>
+                        <Button Content="‹" Style="{DynamicResource IconPill}" Width="26" Height="29" Click="PreviousWeek_Click"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MonthLabel}" FontWeight="Bold" Foreground="{DynamicResource Ink}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Button Grid.Column="2" Content="›" Style="{DynamicResource IconPill}" Width="26" Height="29" Click="NextWeek_Click"/>
                     </Grid>
                     <ListBox Grid.Row="2" ItemsSource="{Binding Days}" SelectedItem="{Binding SelectedDay, Mode=TwoWay}"
                              SelectionChanged="Days_SelectionChanged" ItemContainerStyle="{StaticResource DayRow}" BorderThickness="0" Background="Transparent">
                         <ListBox.ItemTemplate><DataTemplate><Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding DayNumber}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                            <TextBlock Text="{Binding DayNumber}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
                             <StackPanel Grid.Column="1"><TextBlock Text="{Binding Weekday}" FontWeight="SemiBold" FontSize="12"/>
-                                <TextBlock Text="{Binding Hint}" FontSize="10" Foreground="{StaticResource Muted}"/></StackPanel>
+                                <TextBlock Text="{Binding Hint}" FontSize="10" Foreground="{DynamicResource Muted}"/></StackPanel>
                         </Grid></DataTemplate></ListBox.ItemTemplate>
                     </ListBox>
-                    <Button Grid.Row="3" Content="✦ 弹出当日待办" Style="{StaticResource Pill}"
+                    <Button Grid.Row="3" Content="✦ 弹出当日待办" Style="{DynamicResource Pill}"
                             FontSize="11" Padding="8,8" Click="OpenDay_Click"/>
                 </Grid>
             </Border>
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="12"/><RowDefinition Height="155"/></Grid.RowDefinitions>
-                <Border Background="{StaticResource Card}" CornerRadius="24" Padding="20,19">
+            <Grid x:Name="TaskContent" Grid.Row="1" Grid.Column="2">
+                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="12"/><RowDefinition x:Name="MemoRow" Height="155"/></Grid.RowDefinitions>
+                <Border x:Name="TasksCard" Background="{DynamicResource Card}" CornerRadius="24" Padding="20,19">
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <StackPanel><TextBlock Text="{Binding SelectedDateLabel}" Foreground="{StaticResource Muted}" FontSize="11"/>
-                                <TextBlock Text="{Binding TaskHeader}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Ink}" Margin="0,3,0,0"/></StackPanel>
+                            <StackPanel><TextBlock x:Name="TaskDateSubtitle" Text="{Binding SelectedDateLabel}" Foreground="{DynamicResource Muted}" FontSize="11"/>
+                                <TextBlock Text="{Binding TaskHeader}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource Ink}" Margin="0,3,0,0"/></StackPanel>
                             <Border Grid.Column="1" Background="#E6F9F6" CornerRadius="15" Padding="10,5" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding ProgressLabel}" Foreground="#11A89B" FontWeight="Bold" FontSize="11"/></Border>
                         </Grid>
-                        <Border Grid.Row="1" Height="1" Background="#D8CCB6" Margin="0,15,0,15"/>
+                        <Border x:Name="TaskDivider" Grid.Row="1" Height="1" Background="#D8CCB6" Margin="0,15,0,15"/>
                         <Border x:Name="OverdueSection" Grid.Row="2" Visibility="Collapsed" Background="#FFF0DF"
                                 CornerRadius="16" Padding="10,9" Margin="0,0,0,10">
                             <StackPanel>
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding OverdueCountLabel}" Foreground="#A26443" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
-                                    <Button x:Name="OverdueToggle" Grid.Column="1" Content="收起" Style="{StaticResource Pill}"
+                                    <Button x:Name="OverdueToggle" Grid.Column="1" Content="收起" Style="{DynamicResource Pill}"
                                             FontSize="10" Padding="8,4" Click="OverdueToggle_Click"/>
                                 </Grid>
                                 <ListBox x:Name="OverdueList" ItemsSource="{Binding OverdueTasks}" Margin="0,7,0,0"
@@ -386,7 +328,7 @@
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="29"/><ColumnDefinition Width="58"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                         <CheckBox IsChecked="{Binding IsDone, Mode=TwoWay}" Style="{StaticResource IslandCheck}" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Date, StringFormat={}{0:M月d日}}" FontSize="10"
-                                                   Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                                   Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
                                         <Button Grid.Column="2" Style="{StaticResource OverdueLink}" Click="OpenOverdue_Click" ToolTip="打开原日期的任务">
                                             <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
                                         </Button>
@@ -396,19 +338,20 @@
                         </Border>
                         <Grid Grid.Row="3">
                         <ListBox x:Name="TaskList" ItemsSource="{Binding ActiveTasks}" SelectedItem="{Binding SelectedTask, Mode=TwoWay}"
+                                 PreviewMouseLeftButtonUp="TaskList_MouseLeftButtonUp" PreviewKeyDown="TaskList_KeyDown"
                                  ItemContainerStyle="{StaticResource TaskRow}" Background="Transparent" BorderThickness="0">
                             <ListBox.ItemTemplate><DataTemplate><Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <CheckBox IsChecked="{Binding IsDone, Mode=TwoWay}" Click="TaskCheck_Click" Style="{StaticResource IslandCheck}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="2,0,8,0">
                                     <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="TextDecorations" Value="Strikethrough"/><Setter Property="Foreground" Value="#9F927D"/></DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="TextDecorations" Value="Strikethrough"/><Setter Property="Foreground" Value="{DynamicResource Muted}"/></DataTrigger>
                                     </Style.Triggers></Style></TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Grid.Column="2" Text="{Binding ReminderLabel}" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{Binding ReminderLabel}" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center"/>
                             </Grid></DataTemplate></ListBox.ItemTemplate>
                         </ListBox>
-                        <TextBlock Text="{Binding EmptyTaskMessage}" Foreground="{StaticResource Muted}" FontSize="12"
+                        <TextBlock Text="{Binding EmptyTaskMessage}" Foreground="{DynamicResource Muted}" FontSize="12"
                                    TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                             <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers><DataTrigger Binding="{Binding HasActiveTasks}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
@@ -417,82 +360,88 @@
                         </Grid>
                         <Grid Grid.Row="4" Margin="0,10,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="NewTaskBox" Style="{StaticResource PaperInput}" KeyDown="NewTaskBox_KeyDown" ToolTip="输入任务名称，按回车添加"/>
-                            <Button Grid.Column="2" Content="＋ 添加" Style="{StaticResource PrimaryPill}" Click="AddTask_Click"/>
+                            <TextBox x:Name="NewTaskBox" Style="{DynamicResource PaperInput}" KeyDown="NewTaskBox_KeyDown" ToolTip="输入任务名称，按回车添加"/>
+                            <Button Grid.Column="2" Content="＋ 添加" Style="{DynamicResource PrimaryPill}" Click="AddTask_Click"/>
                         </Grid>
                     </Grid>
                 </Border>
-                <Border Grid.Row="2" Background="#F7CD67" CornerRadius="24" Padding="20,15">
+                <Border x:Name="MemoCard" Grid.Row="2" Background="#F7CD67" CornerRadius="24" Padding="20,15">
                     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                        <TextBlock Text="今日备忘" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                        <TextBlock Text="今日备忘" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
                         <TextBox x:Name="DayMemoBox" Grid.Row="1" Text="{Binding DayMemo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent" BorderThickness="0" Foreground="#725D42" Padding="0,7,0,0"
+                                 Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextInk}" Padding="0,7,0,0"
                                  AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
                     </Grid>
                 </Border>
             </Grid>
-            <Border Grid.Column="4" Background="{StaticResource Card}" CornerRadius="24" Padding="20,19">
+            <Border x:Name="TaskNotePanel" Grid.Row="1" Grid.Column="4" Background="{DynamicResource Card}" CornerRadius="24" Padding="20,19">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <StackPanel><TextBlock Text="任务笔记  ✿" FontSize="20" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                            <TextBlock Text="把常用信息留在任务旁边" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,3,0,0"/></StackPanel>
-                        <Button Grid.Column="1" Content="弹出便签" Style="{StaticResource Pill}" FontSize="11" Padding="9,5"
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Button x:Name="BackToTasksButton" Content="‹ 待办" Visibility="Collapsed" Style="{DynamicResource Pill}" Padding="10,6" Margin="0,0,12,0" Click="BackToTasks_Click" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1"><TextBlock Text="任务笔记  ✿" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                            <TextBlock x:Name="NoteSubtitle" Text="把常用信息留在任务旁边" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,3,0,0"/></StackPanel>
+                        <Button Grid.Column="2" Content="打开便签" Style="{DynamicResource Pill}" FontSize="11" Padding="9,5"
                                 VerticalAlignment="Center" IsEnabled="{Binding HasSelectedTask}" Click="OpenNote_Click"/>
                     </Grid>
-                    <Border Grid.Row="1" Height="1" Background="#D8CCB6" Margin="0,15,0,15"/>
+                    <Border x:Name="NoteDivider" Grid.Row="1" Height="1" Background="#D8CCB6" Margin="0,15,0,15"/>
                     <TextBox Grid.Row="2" Text="{Binding SelectedTask.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource PaperInput}" FontWeight="SemiBold" IsEnabled="{Binding HasSelectedTask}" Margin="0,0,0,11" ToolTip="编辑任务名称"/>
-                    <TextBox Grid.Row="3" Text="{Binding SelectedTask.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource PaperInput}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                             IsEnabled="{Binding HasSelectedTask}" ToolTip="记录任务资料和想法"/>
+                             Style="{DynamicResource PaperInput}" FontWeight="SemiBold" IsEnabled="{Binding HasSelectedTask}" Margin="0,0,0,11" ToolTip="编辑任务名称"/>
+                    <Grid Grid.Row="3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><local:FocusBar x:Name="TaskFocus"/><local:MarkdownNoteView x:Name="TaskNoteEditor" Grid.Row="1" DisplayOnly="True" Task="{Binding SelectedTask}" IsEnabled="{Binding HasSelectedTask}"/></Grid>
                     <StackPanel Grid.Row="4" Margin="0,13,0,0">
-                        <TextBlock Text="提醒时间 · 24 小时制，留空则不提醒" Foreground="{StaticResource Muted}" FontSize="11"/>
+                        <TextBlock Text="{Binding SelectedTask.CompletionLabel}" FontSize="11" Foreground="#397457" TextWrapping="Wrap"/>
+                        <TextBlock Text="提醒时间 · 24 小时制，留空则不提醒" Foreground="{DynamicResource Muted}" FontSize="11"/>
                         <Grid Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="7"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="ReminderBox" Style="{StaticResource PaperInput}" IsEnabled="{Binding HasSelectedTask}" ToolTip="例如 14:30"/>
-                            <Button Grid.Column="2" Content="设置" Style="{StaticResource Pill}" IsEnabled="{Binding HasSelectedTask}" Click="SetReminder_Click"/>
+                            <TextBox x:Name="ReminderBox" Style="{DynamicResource PaperInput}" IsEnabled="{Binding HasSelectedTask}" ToolTip="例如 14:30"/>
+                            <Button Grid.Column="2" Content="设置" Style="{DynamicResource Pill}" IsEnabled="{Binding HasSelectedTask}" Click="SetReminder_Click"/>
                         </Grid>
                         <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Button Content="{Binding RepeatButtonLabel}" Style="{StaticResource Pill}" HorizontalAlignment="Left" FontSize="11" Padding="11,7"
+                            <Button Content="{Binding RepeatButtonLabel}" Style="{DynamicResource Pill}" HorizontalAlignment="Left" FontSize="11" Padding="11,7"
                                     IsEnabled="{Binding HasSelectedTask}" Click="RepeatRule_Click"/>
-                            <Button Grid.Column="1" Content="删除此任务" Style="{StaticResource DangerPill}" HorizontalAlignment="Right" FontSize="11" Padding="11,7"
+                            <Button Grid.Column="1" Content="删除此任务" Style="{DynamicResource DangerPill}" HorizontalAlignment="Right" FontSize="11" Padding="11,7"
                                     IsEnabled="{Binding HasSelectedTask}" Click="DeleteTask_Click"/>
                         </Grid>
                     </StackPanel>
                 </Grid>
             </Border>
             </Grid>
-            <Border x:Name="CalendarPage" Grid.Column="2" Visibility="Collapsed"
-                    Background="{StaticResource Card}" CornerRadius="24" Padding="18,16">
+            <Border x:Name="CalendarPage" Grid.Column="2" Visibility="Collapsed" PreviewKeyDown="CalendarPage_KeyDown"
+                    Background="{DynamicResource Card}" CornerRadius="24" Padding="18,16">
                 <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="38"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="38"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                     <Grid Margin="4,0,4,13"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="月历  ✿" FontSize="23" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                            <TextBlock Text="看看每一天要做的事" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,3,0,0"/>
+                            <TextBlock Text="月历  ✿" FontSize="23" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                            <TextBlock Text="安排与完成，都留在这一天" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,3,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="CalendarPreviousButton" Content="‹" Style="{StaticResource IconPill}" Width="30" Height="31" Click="CalendarPrevious_Click" ToolTip="上个月"/>
-                            <TextBlock Text="{Binding CalendarMonthLabel}" FontSize="19" FontWeight="Bold" Foreground="{StaticResource Ink}"
+                            <Button x:Name="CalendarPreviousButton" Content="‹" Style="{DynamicResource IconPill}" Width="30" Height="31" Click="CalendarPrevious_Click" ToolTip="上个月"/>
+                            <TextBlock Text="{Binding CalendarMonthLabel}" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource Ink}"
                                        Width="130" TextAlignment="Center" VerticalAlignment="Center"/>
-                            <Button x:Name="CalendarNextButton" Content="›" Style="{StaticResource IconPill}" Width="30" Height="31" Click="CalendarNext_Click" ToolTip="下个月"/>
-                            <Button x:Name="CalendarTodayButton" Content="今天" Style="{StaticResource Pill}" Padding="12,6" Margin="13,0,0,0" Click="CalendarToday_Click"/>
-                            <Button x:Name="CalendarAddButton" Content="＋ 添加" Style="{StaticResource PrimaryPill}" Padding="13,6" Margin="8,0,0,0"
+                            <Button x:Name="CalendarNextButton" Content="›" Style="{DynamicResource IconPill}" Width="30" Height="31" Click="CalendarNext_Click" ToolTip="下个月"/>
+                            <Button x:Name="CalendarTodayButton" Content="今天" Style="{DynamicResource Pill}" Padding="12,6" Margin="13,0,0,0" Click="CalendarToday_Click"/>
+                            <Button x:Name="CalendarAddButton" Content="＋ 添加" Style="{DynamicResource PrimaryPill}" Padding="13,6" Margin="8,0,0,0"
                                     Click="CalendarAdd_Click" ToolTip="在选中的日期添加待办"/>
                         </StackPanel>
                     </Grid>
-                    <UniformGrid Grid.Row="1" Columns="7" Margin="2,0,2,2">
+                    <WrapPanel Grid.Row="1" Margin="4,0,4,5">
+                        <RadioButton x:Name="CalendarAllFilter" GroupName="CalendarFilters" Content="全部" IsChecked="True" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click"/>
+                        <RadioButton x:Name="CalendarPendingFilter" GroupName="CalendarFilters" Content="未完成" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click" Margin="7,0,0,0"/>
+                        <RadioButton x:Name="CalendarDoneFilter" GroupName="CalendarFilters" Content="已完成" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click" Margin="7,0,0,0"/>
+                        <TextBlock Text="✓ 完成  ○ 今日  ! 逾期  ↻ 重复" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="14,5,0,5"/>
+                    </WrapPanel>
+                    <UniformGrid Grid.Row="2" Columns="7" Margin="2,0,2,2">
                         <TextBlock Text="周日"/><TextBlock Text="周一"/><TextBlock Text="周二"/><TextBlock Text="周三"/>
                         <TextBlock Text="周四"/><TextBlock Text="周五"/><TextBlock Text="周六"/>
-                        <UniformGrid.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                        <UniformGrid.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Muted}"/>
                             <Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/>
                             <Setter Property="TextAlignment" Value="Center"/><Setter Property="VerticalAlignment" Value="Center"/>
                         </Style></UniformGrid.Resources>
                     </UniformGrid>
-                    <Border Grid.Row="2" Background="#E8DFCA" CornerRadius="15" Padding="2">
+                    <Border Grid.Row="3" Background="#E8DFCA" CornerRadius="15" Padding="2">
                         <ScrollViewer x:Name="CalendarScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl ItemsSource="{Binding CalendarDays}"
+                        <ItemsControl x:Name="CalendarGrid" ItemsSource="{Binding CalendarDays}" SizeChanged="CalendarGrid_SizeChanged"
                                       Height="{Binding ActualHeight, ElementName=CalendarScroll, Converter={StaticResource CalendarGridHeight}}">
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate><DataTemplate>
@@ -505,18 +454,19 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False"><Setter Property="Background" Value="#F3EFDF"/></DataTrigger>
                                             <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="Background" Value="#E6F9F6"/>
-                                                <Setter Property="BorderBrush" Value="#19C8B9"/></DataTrigger>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger>
                                         </Style.Triggers>
                                     </Style></Border.Style>
                                     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                        <TextBlock Text="{Binding Summary}" ToolTip="{Binding SummaryHint}" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="9" Foreground="{DynamicResource Muted}"/>
                                         <Border Width="26" Height="25" HorizontalAlignment="Left" CornerRadius="9">
                                             <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="Transparent"/>
-                                                <Style.Triggers><DataTrigger Binding="{Binding IsToday}" Value="True"><Setter Property="Background" Value="#19C8B9"/></DataTrigger></Style.Triggers>
+                                                <Style.Triggers><DataTrigger Binding="{Binding IsToday}" Value="True"><Setter Property="Background" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers>
                                             </Style></Border.Style>
                                             <TextBlock Text="{Binding DayNumber}" FontSize="12" FontWeight="Bold" TextAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Ink}"/>
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False"><Setter Property="Foreground" Value="{StaticResource Muted}"/></DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False"><Setter Property="Foreground" Value="{DynamicResource Muted}"/></DataTrigger>
                                                         <DataTrigger Binding="{Binding IsToday}" Value="True"><Setter Property="Foreground" Value="White"/></DataTrigger>
                                                     </Style.Triggers>
                                                 </Style></TextBlock.Style>
@@ -531,11 +481,11 @@
                                                     </Button>
                                                 </DataTemplate></ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                            <TextBlock Text="{Binding OverflowLabel}" FontSize="10" Foreground="{StaticResource Muted}" Margin="5,0,0,0">
-                                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
+                                            <Button Content="{Binding OverflowLabel}" FontSize="10" Click="CalendarMore_Click" Padding="3,2" HorizontalAlignment="Stretch">
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource CalendarTaskChip}"><Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers><DataTrigger Binding="{Binding HasOverflow}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
-                                                </Style></TextBlock.Style>
-                                            </TextBlock>
+                                                </Style></Button.Style>
+                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -543,24 +493,40 @@
                         </ItemsControl>
                         </ScrollViewer>
                     </Border>
+                    <Border x:Name="CalendarDayOverlay" Grid.RowSpan="4" Visibility="Collapsed" Background="{DynamicResource PaperSurface}" BorderBrush="#D8CCB6" BorderThickness="1.5" CornerRadius="20" Padding="18" Margin="10" MaxWidth="650">
+                        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <DockPanel Margin="0,0,0,14">
+                                <Button DockPanel.Dock="Right" Content="返回月历" Style="{DynamicResource Pill}" Click="CalendarCloseDay_Click"/>
+                                <TextBlock x:Name="CalendarDayHeading" FontWeight="Bold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl x:Name="CalendarDayEntries"><ItemsControl.ItemTemplate><DataTemplate>
+                                    <Button Style="{StaticResource CalendarTaskChip}" Padding="12,10" Click="CalendarTask_Click" ToolTip="{Binding Hint}">
+                                        <StackPanel><TextBlock Text="{Binding DisplayTitle}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding StatusLabel}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+                                    </Button>
+                                </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
             <Border x:Name="SearchPage" Grid.Column="2" Visibility="Collapsed"
-                    Background="{StaticResource Card}" CornerRadius="24" Padding="24,21">
+                    Background="{DynamicResource Card}" CornerRadius="24" Padding="24,21">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                     <StackPanel>
-                        <TextBlock Text="找一找  ✿" FontSize="23" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                        <TextBlock Text="找一找  ✿" FontSize="23" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
                         <TextBlock Text="任务名称、任务笔记和每日备忘，都能在这里找到" FontSize="12"
-                                   Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
+                                   Foreground="{DynamicResource Muted}" Margin="0,5,0,0"/>
                     </StackPanel>
                     <Grid Grid.Row="1" Margin="0,19,0,0">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBox x:Name="SearchBox" Style="{StaticResource PaperInput}" KeyDown="SearchBox_KeyDown"
+                        <TextBox x:Name="SearchBox" Style="{DynamicResource PaperInput}" KeyDown="SearchBox_KeyDown"
                                  ToolTip="输入关键词，按回车搜索"/>
-                        <Button Grid.Column="2" Content="搜索" Style="{StaticResource PrimaryPill}" Click="Search_Click"/>
+                        <Button Grid.Column="2" Content="搜索" Style="{DynamicResource PrimaryPill}" Click="Search_Click"/>
                     </Grid>
-                    <TextBlock Grid.Row="2" Text="{Binding SearchStatus}" Foreground="{StaticResource Muted}"
+                    <TextBlock Grid.Row="2" Text="{Binding SearchStatus}" Foreground="{DynamicResource Muted}"
                                FontSize="11" Margin="2,14,0,12"/>
                     <Grid Grid.Row="3">
                     <ListBox x:Name="SearchResultsList" ItemsSource="{Binding SearchResults}"
@@ -571,12 +537,12 @@
                                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="{StaticResource Ink}"
+                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="{DynamicResource Ink}"
                                                TextTrimming="CharacterEllipsis" MaxWidth="550"/>
-                                    <TextBlock Text="{Binding KindLabel}" Foreground="#0D9F94" FontSize="10"
+                                    <TextBlock Text="{Binding KindLabel}" Foreground="{DynamicResource AccentOutline}" FontSize="10"
                                                Margin="10,2,0,0"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" Text="{Binding DateLabel}" Foreground="{StaticResource Muted}" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="{Binding DateLabel}" Foreground="{DynamicResource Muted}" FontSize="11"/>
                                 <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Snippet}" Foreground="#8E7E67"
                                            TextTrimming="CharacterEllipsis" Margin="0,5,0,0"/>
                             </Grid>
@@ -593,26 +559,26 @@
                                 HorizontalAlignment="Center" Margin="0,0,0,16">
                             <Grid Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Ellipse Width="21" Height="21" Margin="1,1,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                         Stroke="#19C8B9" StrokeThickness="2.5"/>
-                                <Path Data="M 22,22 L 30,30" Stroke="#19C8B9" StrokeThickness="2.5"
+                                         Stroke="{DynamicResource Accent}" StrokeThickness="2.5"/>
+                                <Path Data="M 22,22 L 30,30" Stroke="{DynamicResource Accent}" StrokeThickness="2.5"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                             </Grid>
                         </Border>
-                        <TextBlock Text="想找哪件事？" FontSize="17" FontWeight="Bold" Foreground="{StaticResource Ink}"
+                        <TextBlock Text="想找哪件事？" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource Ink}"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="输入关键词，按回车试试看" FontSize="12" Foreground="{StaticResource Muted}"
+                        <TextBlock Text="输入关键词，按回车试试看" FontSize="12" Foreground="{DynamicResource Muted}"
                                    HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
                     </Grid>
                 </Grid>
             </Border>
             <Border x:Name="CompletedPage" Grid.Column="2" Visibility="Collapsed"
-                    Background="{StaticResource Card}" CornerRadius="24" Padding="24,21">
+                    Background="{DynamicResource Card}" CornerRadius="24" Padding="24,21">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                     <StackPanel>
-                        <TextBlock Text="已完成  ✿" FontSize="23" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                        <TextBlock Text="{Binding CompletedCountLabel}" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
+                        <TextBlock Text="已完成  ✿" FontSize="23" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                        <TextBlock Text="{Binding CompletedCountLabel}" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,5,0,0"/>
                     </StackPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,20,0,14">
                         <RadioButton x:Name="AllCompletedFilter" Content="全部日期" GroupName="CompletedDates" IsChecked="True"
@@ -628,29 +594,29 @@
                                 <ItemsControl.ItemTemplate><DataTemplate>
                                     <StackPanel Margin="0,0,0,15">
                                         <Grid Margin="4,0,4,10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding DateLabel}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding CountLabel}" FontSize="11" Foreground="{StaticResource Muted}"
+                                            <TextBlock Text="{Binding DateLabel}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding CountLabel}" FontSize="11" Foreground="{DynamicResource Muted}"
                                                        Margin="10,3,0,0"/>
                                         </Grid>
                                         <ItemsControl ItemsSource="{Binding Tasks}">
                                             <ItemsControl.ItemTemplate><DataTemplate>
-                                                <Border Background="#FFFBE7" BorderBrush="#E5DCC7" BorderThickness="1.5"
+                                                <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5"
                                                         CornerRadius="17" Padding="15,12" Margin="0,0,0,8">
                                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                                        <Border Width="24" Height="24" CornerRadius="8" Background="#19C8B9" BorderBrush="#0D9F94"
+                                                        <Border Width="24" Height="24" CornerRadius="8" Background="{DynamicResource Accent}" BorderBrush="{DynamicResource AccentOutline}"
                                                                 BorderThickness="1.5" HorizontalAlignment="Left" VerticalAlignment="Center">
                                                             <TextBlock Text="✓" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="1,0,12,0">
-                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
                                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                                <TextBlock Text="原定 " FontSize="10" Foreground="{StaticResource Muted}"/>
-                                                                <TextBlock Text="{Binding Date, StringFormat={}{0:M月d日}}" FontSize="10" Foreground="{StaticResource Muted}"/>
-                                                                <TextBlock Text="{Binding Note}" FontSize="10" Foreground="{StaticResource Muted}" Margin="12,0,0,0"
+                                                                <TextBlock Text="原定 " FontSize="10" Foreground="{DynamicResource Muted}"/>
+                                                                <TextBlock Text="{Binding Date, StringFormat={}{0:M月d日}}" FontSize="10" Foreground="{DynamicResource Muted}"/>
+                                                                <TextBlock Text="{Binding Note}" FontSize="10" Foreground="{DynamicResource Muted}" Margin="12,0,0,0"
                                                                            TextTrimming="CharacterEllipsis" MaxWidth="310"/>
                                                             </StackPanel>
                                                         </StackPanel>
-                                                        <Button Grid.Column="2" Content="恢复待办" Style="{StaticResource Pill}" FontSize="11" Padding="10,6"
+                                                        <Button Grid.Column="2" Content="恢复待办" Style="{DynamicResource Pill}" FontSize="11" Padding="10,6"
                                                                 VerticalAlignment="Center" Tag="{Binding}" Click="RestoreCompleted_Click"/>
                                                     </Grid>
                                                 </Border>
@@ -665,31 +631,48 @@
                                 <Style.Triggers><DataTrigger Binding="{Binding HasCompletedTasks}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
                             </Style></StackPanel.Style>
                             <Border Width="68" Height="68" Background="#DDF7F1" CornerRadius="23" HorizontalAlignment="Center" Margin="0,0,0,13">
-                                <TextBlock Text="✓" FontSize="34" FontWeight="Bold" Foreground="#19C8B9" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="✓" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="这里还没有完成的任务" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Ink}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="勾选待办后，就会收在这里" FontSize="12" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            <TextBlock Text="这里还没有完成的任务" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Ink}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="勾选待办后，就会收在这里" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Grid>
             </Border>
             <Border x:Name="SettingsPage" Grid.Column="2" Visibility="Collapsed"
-                    Background="{StaticResource Card}" CornerRadius="24" Padding="25,24">
-                <StackPanel>
-                    <TextBlock Text="小岛设置  ✿" FontSize="23" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
-                    <TextBlock Text="让小岛按你的习惯运行" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,5,0,22"/>
-                    <Border Background="#FFFBE7" BorderBrush="#E5DCC7" BorderThickness="1.5" CornerRadius="18" Padding="18,16">
+                    Background="{DynamicResource Card}" CornerRadius="24" Padding="25,24">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel MaxWidth="1000" HorizontalAlignment="Stretch">
+                    <TextBlock Text="小岛设置  ✿" FontSize="23" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                    <TextBlock Text="让小岛按你的习惯运行" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,5,0,22"/>
+                    <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5" CornerRadius="18" Padding="18,16">
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <StackPanel><TextBlock Text="开机后在后台提醒我" FontSize="15" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
+                            <StackPanel><TextBlock Text="开机后在后台提醒我" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
                                 <TextBlock Text="登录 Windows 后驻留托盘，不自动打开主窗口；随时可从托盘打开。"
-                                           FontSize="11" Foreground="{StaticResource Muted}" Margin="0,5,0,0"/></StackPanel>
+                                           FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
                             <CheckBox x:Name="AutostartCheck" Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0"
                                       Style="{StaticResource IslandCheck}" Click="AutostartCheck_Click" ToolTip="开机自启"/>
                         </Grid>
                     </Border>
-                    <TextBlock x:Name="SettingsStatus" FontSize="11" Foreground="{StaticResource Muted}" Margin="3,13,0,0"/>
+                    <TextBlock x:Name="SettingsStatus" FontSize="11" Foreground="{DynamicResource Muted}" Margin="3,13,0,0"/>
+                    <local:ScreenshotSettingsView x:Name="ScreenshotSettings" Margin="0,12,0,0"/>
+                    <Button Content="专注时长与提醒设置" Click="FocusTab_Click" Style="{DynamicResource Pill}" HorizontalAlignment="Left" Margin="0,14,0,0"/>
+                    <Border Background="{DynamicResource PaperSurface}" BorderBrush="#E5DCC7" BorderThickness="1.5" CornerRadius="18" Padding="18,16" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="笔记图片" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
+                            <TextBlock x:Name="AttachmentUsageText" Text="按需保存，独立于截图箱" FontSize="12" Foreground="{DynamicResource TextInk}" Margin="0,9,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="正文、备份和找回副本引用的图片会保留。本次运行中用过的图片也会保留，方便撤销；重启后可再次检查。" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,6,0,12" TextWrapping="Wrap"/>
+                            <WrapPanel>
+                                <Button Content="刷新占用" Style="{DynamicResource Pill}" Click="RefreshAttachments_Click" Margin="0,0,8,0"/>
+                                <Button x:Name="CleanAttachmentsButton" Content="清理未使用图片" Style="{DynamicResource Pill}" Click="CleanAttachments_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
+                </ScrollViewer>
             </Border>
+            <local:FocusPage x:Name="FocusView" Grid.Column="2" Visibility="Collapsed"/>
+            <local:ScreenshotPage x:Name="ScreenshotGallery" Grid.Column="2" Visibility="Collapsed"/>
         </Grid>
     </Grid>
 </Window>

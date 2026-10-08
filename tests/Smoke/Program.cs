@@ -135,8 +135,9 @@ Check(materialized.TaskId is not null && !materialized.IsProjected, "打开日�
 var completedPreviewTask = repeatRepository.LoadTasks(previewDay).Single();
 completedPreviewTask.IsDone = true;
 repeatRepository.SaveTask(completedPreviewTask);
-Check(repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Count == 0,
-    "已完成任务不显示在月历待办中");
+var completedCalendar = repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Single();
+Check(completedCalendar.IsDone && completedCalendar.TaskId == completedPreviewTask.Id && completedCalendar.CompletedAt is not null,
+    "月历保留已完成任务和完成时间，不重复生成预览");
 repeatRepository.DeleteTask(completedPreviewTask.Id);
 Check(repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Count == 0,
     "删除的重复任务不在月历重新预览");

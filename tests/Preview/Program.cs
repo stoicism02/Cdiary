@@ -12,7 +12,9 @@ internal static class Program
 [STAThread]
 private static void Main(string[] args)
 {
-if (args.Length != 1) throw new ArgumentException("请指定预览输出目录。");
+if (args.Length is < 1 or > 2) throw new ArgumentException("请指定预览输出目录，可选第二个参数为共享样式文件。");
+using var liveStyles = args.Length == 2 ? new StyleHotReload(Path.GetFullPath(args[1]), Dispatcher.CurrentDispatcher) : null;
+if (liveStyles is { LastReloadSucceeded: false }) throw new InvalidDataException(liveStyles.Status);
 var output = Path.GetFullPath(args[0]);
 Directory.CreateDirectory(output);
 var database = Path.Combine(Path.GetTempPath(), "CdiaryPreview", Guid.NewGuid().ToString("N"), "preview.db");
@@ -44,15 +46,51 @@ var scheduler = new ReminderScheduler(repository, Dispatcher.CurrentDispatcher, 
 var window = new MainWindow(repository, scheduler);
 var root = (FrameworkElement)window.Content;
 
+var note = new TaskNoteWindow(first, repository);
+Render((FrameworkElement)note.Content, Path.Combine(output, "preview-note.png"), 340, 400);
+Render((FrameworkElement)note.Content, Path.Combine(output, "preview-note-small.png"), 260, 260);
+var daily = new DailyTodoWindow(today, window.Tasks, _ => { }, _ => { });
+Render((FrameworkElement)daily.Content, Path.Combine(output, "preview-daily.png"), 365, 480);
+Render((FrameworkElement)daily.Content, Path.Combine(output, "preview-daily-small.png"), 285, 290);
+var longTasks = new System.Collections.ObjectModel.ObservableCollection<DiaryTask>();
+for (var index = 0; index < 8; index++)
+{
+    var item = repository.AddTask(today.AddDays(10), index == 5
+        ? "准备面试（八股文：redis、回顾计网、mysql），整理错题并复习常见问题"
+        : index == 6 ? "修改简历" : "准备申论");
+    item.IsDone = index < 5;
+    item.ReminderTime = new TimeSpan(18, 30, 0);
+    repository.SaveTask(item);
+    longTasks.Add(item);
+}
+var longDaily = new DailyTodoWindow(today, longTasks, _ => { }, _ => { });
+Render((FrameworkElement)longDaily.Content, Path.Combine(output, "preview-daily-long-title.png"), 285, 480);
+Render((FrameworkElement)longDaily.Content, Path.Combine(output, "preview-daily-long-title-short.png"), 285, 290);
+Render((FrameworkElement)longDaily.Content, Path.Combine(output, "preview-daily-long-title-wide.png"), 600, 480);
+
 Render(root, Path.Combine(output, "preview-home.png"));
-Render(root, Path.Combine(output, "preview-home-compact.png"), 1100, 580);
+Render(root, Path.Combine(output, "preview-home-wide.png"), 1500, 900);
+Render(root, Path.Combine(output, "preview-home-maximized.png"), 1920, 1080);
+Render(root, Path.Combine(output, "preview-home-compact.png"), 760, 580);
+window.ShowTask(today, first.Id);
+Render(root, Path.Combine(output, "preview-home-detail.png"), 760, 580);
+((Button)window.FindName("BackToTasksButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 ((UIElement)window.FindName("HomePage")!).Visibility = Visibility.Collapsed;
 ((RadioButton)window.FindName("CalendarTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 Render(root, Path.Combine(output, "preview-calendar.png"));
+Render(root, Path.Combine(output, "preview-calendar-current-small.png"), 760, 580);
+Render(root, Path.Combine(output, "preview-calendar-wide.png"), 1500, 900);
+var moreButton = FindCalendarMore(root);
+moreButton?.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+Render(root, Path.Combine(output, "preview-calendar-day-list.png"), 760, 580);
+((UIElement)window.FindName("CalendarDayOverlay")!).Visibility = Visibility.Collapsed;
+((RadioButton)window.FindName("CalendarDoneFilter")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+Render(root, Path.Combine(output, "preview-calendar-done.png"));
+((RadioButton)window.FindName("CalendarAllFilter")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 for (var month = 0; month < 4; month++)
     ((Button)window.FindName("CalendarNextButton")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 Render(root, Path.Combine(output, "preview-calendar-six-rows.png"));
-Render(root, Path.Combine(output, "preview-calendar-compact.png"), 1100, 580);
+Render(root, Path.Combine(output, "preview-calendar-compact.png"), 760, 580);
 ((UIElement)window.FindName("CalendarPage")!).Visibility = Visibility.Collapsed;
 ((UIElement)window.FindName("SearchPage")!).Visibility = Visibility.Visible;
 ((RadioButton)window.FindName("SearchTab")!).IsChecked = true;
@@ -60,10 +98,12 @@ Render(root, Path.Combine(output, "preview-search.png"));
 ((UIElement)window.FindName("SearchPage")!).Visibility = Visibility.Collapsed;
 ((RadioButton)window.FindName("CompletedTab")!).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 Render(root, Path.Combine(output, "preview-completed.png"));
+Render(root, Path.Combine(output, "preview-completed-compact.png"), 760, 580);
 ((UIElement)window.FindName("CompletedPage")!).Visibility = Visibility.Collapsed;
 ((UIElement)window.FindName("SettingsPage")!).Visibility = Visibility.Visible;
 ((RadioButton)window.FindName("SettingsTab")!).IsChecked = true;
 Render(root, Path.Combine(output, "preview-settings.png"));
+Render(root, Path.Combine(output, "preview-settings-compact.png"), 760, 580);
 var repeat = new RepeatRuleWindow(repository, first);
 var repeatRoot = (FrameworkElement)repeat.Content;
 ((RadioButton)repeat.FindName("DailyRadio")!).IsChecked = true;
@@ -113,5 +153,12 @@ static void Render(FrameworkElement root, string path, int width = 1100, int hei
     using var stream = File.Create(path);
     encoder.Save(stream);
     Console.WriteLine(path);
+}
+static Button? FindCalendarMore(DependencyObject root)
+{
+    if (root is Button { DataContext: CalendarDay day } button && Equals(button.Content, day.OverflowLabel) && day.HasOverflow) return button;
+    for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        if (FindCalendarMore(VisualTreeHelper.GetChild(root, i)) is { } found) return found;
+    return null;
 }
 }

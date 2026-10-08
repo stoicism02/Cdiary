@@ -30,9 +30,11 @@ public sealed class DiaryTask : INotifyPropertyChanged
     public DateTime Date { get; }
     public DateTime? NotifiedAt { get; set; }
     public DateTime? CompletedAt { get; private set; }
+    public string CompletionLabel => IsDone ? CompletedAt is { } at ? $"✓ 已完成 · {at:yyyy年M月d日 HH:mm}" : "✓ 已完成 · 完成时间未记录" : "";
     public long? RecurrenceRuleId { get; set; }
     public string Title { get => _title; set { _title = value; Changed(); } }
-    public string Note { get => _note; set { _note = value; Changed(); } }
+    public long NoteRevision { get; private set; }
+    public string Note { get => _note; set { if (_note == value) return; _note = value; NoteRevision++; Changed(); } }
     public bool IsDone
     {
         get => _isDone;
@@ -42,6 +44,7 @@ public sealed class DiaryTask : INotifyPropertyChanged
             _isDone = value;
             CompletedAt = value ? DateTime.Now : null;
             Changed();
+            Changed(nameof(CompletionLabel));
         }
     }
     public TimeSpan? ReminderTime

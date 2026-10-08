@@ -11,9 +11,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="MdXaml" Version="1.27.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <Compile Remove="tests\**\*.cs" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
     <Resource Include="Assets\Cdiary.ico" />
+    <None Update="MARKDOWN-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="EditorWeb\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

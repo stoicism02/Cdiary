@@ -39,12 +39,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private DateTime _knownToday = DateTime.Today;
     private bool _overdueExpanded = true;
     private bool _overdueManuallyToggled;
+    private WindowLayoutMode _layoutMode = WindowLayoutMode.Standard;
+    private bool _hasResponsiveLayout;
+    private bool _compactDetails;
+    private int _calendarFilter;
+    private int _calendarVisibleLimit = 3;
+    private DateTime? _calendarExpandedDate;
+    public WindowLayoutMode CurrentLayoutMode => _layoutMode;
+    public bool IsCompactDetailOpen => _layoutMode == WindowLayoutMode.Compact && _compactDetails;
 
-    public MainWindow(DiaryRepository repository, ReminderScheduler scheduler)
+    public MainWindow(DiaryRepository repository, ReminderScheduler scheduler, ScreenshotService? screenshots = null, FocusStore? focusStore = null, FocusService? focus = null)
     {
         _repository = repository;
         _scheduler = scheduler;
         InitializeComponent();
+        InitializeFocus(focusStore, focus);
+        TaskNoteEditor.DocumentRepository = repository;
+        ScreenshotGallery.SettingsRequested += ShowSettingsPage;
+        if (screenshots is not null)
+        {
+            ScreenshotGallery.Attach(screenshots);
+            ScreenshotSettings.Attach(screenshots);
+        }
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => FlushEdits();
         _dayTimer = new DispatcherTimer();
@@ -61,6 +77,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public bool AllowExit { get; set; }
+    public void ConfigureDevelopmentPreview()
+    {
+        Title = "小岛日记 · 开发预览";
+        AppHeading.Text = "小岛开发预览";
+        AutostartCheck.IsChecked = false; AutostartCheck.IsEnabled = false;
+        AutostartCheck.ToolTip = "开发预览不修改开机自启设置";
+        EnvironmentStatus.Text = "示例数据 · 样式热加载";
+    }
+    public void ShowStyleReloadStatus(bool success, string message)
+    {
+        EnvironmentStatus.Text = success ? message : "样式有误，保留上一版";
+        EnvironmentStatus.ToolTip = message;
+        EnvironmentStatus.SetResourceReference(TextBlock.ForegroundProperty, success ? "Muted" : "DangerInk");
+    }
     public ObservableCollection<DayOption> Days { get; } = new();
     public ObservableCollection<SearchResult> SearchResults { get; } = new();
     public ObservableCollection<CompletedDayGroup> CompletedGroups { get; } = new();
@@ -110,6 +140,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         set
         {
             _selectedTask = value;
+            TaskFocus.Task=value;TaskFocus.Reload();
             ReminderBox.Text = value?.ReminderTime?.ToString(@"hh\:mm") ?? "";
             Changed();
             Changed(nameof(HasSelectedTask));
@@ -156,6 +187,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OpenDate(DateTime date)
     {
         FlushEdits();
+        _compactDetails = false;
+        ApplyHomeVisibility();
         _selectedDate = date.Date;
         if (!Days.Any(day => day.Date == _selectedDate))
         {
@@ -264,6 +297,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OpenDate(date);
         SelectedTask = Tasks.FirstOrDefault(task => task.Id == id);
         if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
+        if (_layoutMode == WindowLayoutMode.Compact && SelectedTask is not null) ShowCompactDetails();
     }
 
     private void ShowMemo(DateTime date)
@@ -275,6 +309,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowHomePage()
     {
+        _compactDetails = false;
+        ApplyHomeVisibility();
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Collapsed;
         HomeTab.IsChecked = true;
         HomePage.Visibility = Visibility.Visible;
         CalendarPage.Visibility = Visibility.Collapsed;
@@ -286,6 +323,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowSearchPage()
     {
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Collapsed;
         SearchTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
         CalendarPage.Visibility = Visibility.Collapsed;
@@ -297,17 +335,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowSettingsPage()
     {
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Collapsed;
         SettingsTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
         CalendarPage.Visibility = Visibility.Collapsed;
         SearchPage.Visibility = Visibility.Collapsed;
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Visible;
-        AutostartCheck.IsChecked = StartupSettings.IsEnabled;
+        if (AutostartCheck.IsEnabled) AutostartCheck.IsChecked = StartupSettings.IsEnabled;
+        _ = RefreshAttachmentUsageAsync();
     }
 
     private void ShowCompletedPage()
     {
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Collapsed;
         FlushEdits();
         CompletedTab.IsChecked = true;
         HomePage.Visibility = Visibility.Collapsed;
@@ -320,6 +361,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowCalendarPage()
     {
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Collapsed;
         FlushEdits();
         _calendarSelectedDate = _selectedDate;
         _calendarMonth = new DateTime(_selectedDate.Year, _selectedDate.Month, 1);
@@ -329,6 +371,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         CompletedPage.Visibility = Visibility.Collapsed;
         SettingsPage.Visibility = Visibility.Collapsed;
         CalendarPage.Visibility = Visibility.Visible;
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
         RefreshCalendar();
     }
 
@@ -338,6 +381,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var visibleStart = first.AddDays(-(int)first.DayOfWeek);
         var daysNeeded = (int)first.DayOfWeek + DateTime.DaysInMonth(first.Year, first.Month);
         var cellCount = Math.Max(35, ((daysNeeded + 6) / 7) * 7);
+        _calendarVisibleLimit = Math.Max(1, (int)((Math.Max(470, CalendarGrid.ActualHeight) / (cellCount / 7) - 43) / 22));
         var entries = _repository.LoadCalendarEntries(visibleStart, visibleStart.AddDays(cellCount))
             .GroupBy(entry => entry.Date).ToDictionary(group => group.Key, group => (IReadOnlyList<CalendarEntry>)group.ToList());
         CalendarDays.Clear();
@@ -345,13 +389,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var date = visibleStart.AddDays(day);
             var dayEntries = entries.GetValueOrDefault(date) ?? [];
-            var visibleLimit = cellCount == 42
-                ? dayEntries.Count > 2 ? 1 : 2
-                : dayEntries.Count > 3 ? 2 : 3;
             CalendarDays.Add(new CalendarDay(date, first, _calendarSelectedDate,
-                dayEntries, visibleLimit));
+                dayEntries, _calendarVisibleLimit, _calendarFilter));
         }
         Changed(nameof(CalendarMonthLabel));
+        if (CalendarDayOverlay.Visibility == Visibility.Visible && _calendarExpandedDate is { } expanded)
+        {
+            var day = CalendarDays.FirstOrDefault(item => item.Date == expanded);
+            if (day is null) CalendarDayOverlay.Visibility = Visibility.Collapsed;
+            else SetCalendarDayContents(day);
+        }
     }
 
     private void ReloadCompleted()
@@ -422,6 +469,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    public async System.Threading.Tasks.Task PrepareDocumentExitAsync()
+    {
+        await TaskNoteEditor.FlushDocumentAsync();
+        foreach (var noteWindow in _noteWindows.Values.ToArray()) await noteWindow.PrepareDocumentExitAsync();
+        FlushEdits();
+    }
+
     protected override void OnClosing(CancelEventArgs e)
     {
         FlushEdits();
@@ -468,12 +522,79 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void HomePage_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        if (e.NewSize.Height <= 0) return;
+        MemoRow.Height = new GridLength(Math.Clamp((e.NewSize.Height - DateToolbar.ActualHeight) * 0.24, 110, 210));
         if (_overdueManuallyToggled) return;
         var expanded = e.NewSize.Height >= 520;
         if (_overdueExpanded == expanded) return;
         _overdueExpanded = expanded;
         UpdateOverdueSection();
     }
+
+    private void LayoutRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.NewSize.Width <= 0 || TaskNotePanel is null) return;
+        var mode = ResponsiveLayout.ForWidth(e.NewSize.Width + LayoutRoot.Margin.Left + LayoutRoot.Margin.Right);
+        var shortWindow = e.NewSize.Height + LayoutRoot.Margin.Top + LayoutRoot.Margin.Bottom < 650;
+        if (!_hasResponsiveLayout || mode != _layoutMode)
+        {
+            if (mode == WindowLayoutMode.Compact && TaskNotePanel.IsKeyboardFocusWithin) _compactDetails = true;
+            _layoutMode = mode; _hasResponsiveLayout = true;
+            var wide = mode == WindowLayoutMode.Wide;
+            DateColumn.Width = new GridLength(wide ? 180 : 0);
+            DateGap.Width = new GridLength(wide ? 12 : 0);
+            TaskColumn.Width = new GridLength(mode == WindowLayoutMode.Compact ? 1 : 1.2, GridUnitType.Star);
+            NoteGap.Width = new GridLength(mode == WindowLayoutMode.Compact ? 0 : 12);
+            NoteColumn.Width = mode == WindowLayoutMode.Compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            DateToolbar.Visibility = wide ? Visibility.Collapsed : Visibility.Visible;
+            DateRail.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+            TaskDateSubtitle.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+            EnvironmentStatus.Visibility = mode == WindowLayoutMode.Compact ? Visibility.Collapsed : Visibility.Visible;
+            ApplyHomeVisibility();
+        }
+        HeaderRow.Height = new GridLength(shortWindow ? 64 : 74);
+        System.Windows.Shell.WindowChrome.GetWindowChrome(this).CaptionHeight = (shortWindow ? 64 : 74) + LayoutRoot.Margin.Top;
+        BrandSubtitle.Visibility = shortWindow ? Visibility.Collapsed : Visibility.Visible;
+        NoteSubtitle.Visibility = shortWindow ? Visibility.Collapsed : Visibility.Visible;
+        TasksCard.Padding = TaskNotePanel.Padding = new Thickness(shortWindow ? 16 : _layoutMode == WindowLayoutMode.Wide ? 24 : 20);
+        TaskDivider.Margin = NoteDivider.Margin = new Thickness(0, shortWindow ? 8 : 15, 0, shortWindow ? 8 : 15);
+    }
+
+    private void ApplyHomeVisibility()
+    {
+        var compact = _layoutMode == WindowLayoutMode.Compact;
+        TaskContent.Visibility = compact && _compactDetails ? Visibility.Collapsed : Visibility.Visible;
+        TaskNotePanel.Visibility = !compact || _compactDetails ? Visibility.Visible : Visibility.Collapsed;
+        Grid.SetColumn(TaskNotePanel, compact ? 2 : 4);
+        Grid.SetColumnSpan(TaskNotePanel, compact ? 3 : 1);
+        BackToTasksButton.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
+    }
+    private void ShowCompactDetails()
+    {
+        if (_layoutMode != WindowLayoutMode.Compact || SelectedTask is null) return;
+        _compactDetails = true; ApplyHomeVisibility();
+    }
+    private void BackToTasks_Click(object sender, RoutedEventArgs e)
+    { _compactDetails = false; ApplyHomeVisibility(); }
+    private void HomePage_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && IsCompactDetailOpen)
+        { _compactDetails = false; ApplyHomeVisibility(); e.Handled = true; }
+    }
+    private void TaskList_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_layoutMode != WindowLayoutMode.Compact) return;
+        for (var node = e.OriginalSource as DependencyObject; node is not null && node != TaskList; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is System.Windows.Controls.CheckBox) return;
+            if (node is ListBoxItem { DataContext: DiaryTask task })
+            { SelectedTask = task; ShowCompactDetails(); return; }
+        }
+    }
+    private void TaskList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    { if (e.Key == Key.Enter && _layoutMode == WindowLayoutMode.Compact) { ShowCompactDetails(); e.Handled = true; } }
+    private void PreviousDay_Click(object sender, RoutedEventArgs e) => OpenDate(_selectedDate.AddDays(-1));
+    private void NextDay_Click(object sender, RoutedEventArgs e) => OpenDate(_selectedDate.AddDays(1));
 
     private void OpenOverdue_Click(object sender, RoutedEventArgs e)
     {
@@ -485,11 +606,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void CompletedTab_Click(object sender, RoutedEventArgs e) => ShowCompletedPage();
     private void SettingsTab_Click(object sender, RoutedEventArgs e) => ShowSettingsPage();
 
+    private void ScreenshotTab_Click(object sender, RoutedEventArgs e)
+        => ShowScreenshots();
+
+    public void ShowScreenshots()
+    {
+        FlushEdits();
+        ScreenshotTab.IsChecked = true;
+        HomePage.Visibility = CalendarPage.Visibility = SearchPage.Visibility = CompletedPage.Visibility = SettingsPage.Visibility = Visibility.Collapsed;
+        FocusView.Visibility = Visibility.Collapsed; ScreenshotGallery.Visibility = Visibility.Visible;
+    }
+
     private void CalendarPrevious_Click(object sender, RoutedEventArgs e) => MoveCalendarMonth(-1);
     private void CalendarNext_Click(object sender, RoutedEventArgs e) => MoveCalendarMonth(1);
 
     private void MoveCalendarMonth(int offset)
     {
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
         _calendarMonth = _calendarMonth.AddMonths(offset);
         _calendarSelectedDate = new DateTime(_calendarMonth.Year, _calendarMonth.Month,
             Math.Min(_calendarSelectedDate.Day, DateTime.DaysInMonth(_calendarMonth.Year, _calendarMonth.Month)));
@@ -498,6 +631,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void CalendarToday_Click(object sender, RoutedEventArgs e)
     {
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
         _calendarSelectedDate = DateTime.Today;
         _calendarMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         RefreshCalendar();
@@ -531,7 +665,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? Tasks.FirstOrDefault(task => task.Id == id)
             : Tasks.FirstOrDefault(task => task.RecurrenceRuleId == entry.RuleId);
         if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
+        if (SelectedTask is not null && _layoutMode == WindowLayoutMode.Compact) ShowCompactDetails();
         e.Handled = true;
+    }
+
+    private void CalendarFilter_Click(object sender, RoutedEventArgs e)
+    {
+        _calendarFilter = sender == CalendarDoneFilter ? 2 : sender == CalendarPendingFilter ? 1 : 0;
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
+        RefreshCalendar();
+    }
+    private void CalendarMore_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { DataContext: CalendarDay day }) return;
+        _calendarExpandedDate = day.Date;
+        SetCalendarDayContents(day);
+        CalendarDayOverlay.Visibility = Visibility.Visible;
+        e.Handled = true;
+    }
+    private void CalendarCloseDay_Click(object sender, RoutedEventArgs e) => CalendarDayOverlay.Visibility = Visibility.Collapsed;
+    private void SetCalendarDayContents(CalendarDay day)
+    {
+        CalendarDayHeading.Text = $"{day.Date:M月d日} · {day.SummaryHint}";
+        CalendarDayEntries.ItemsSource = day.Entries;
+    }
+    private void CalendarPage_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || CalendarDayOverlay.Visibility != Visibility.Visible) return;
+        CalendarDayOverlay.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+    }
+    private void CalendarGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (CalendarDays.Count == 0) return;
+        var rows = CalendarDays.Count / 7;
+        var limit = Math.Max(1, (int)((e.NewSize.Height / rows - 43) / 22));
+        if (limit == _calendarVisibleLimit) return;
+        _calendarVisibleLimit = limit;
+        RefreshCalendar();
     }
 
     private void CompletedFilter_Click(object sender, RoutedEventArgs e)
@@ -706,6 +878,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (Tasks.Contains(task)) SelectedTask = task;
         var noteWindow = new TaskNoteWindow(task, _repository);
+        if(_focusStore is not null && _focus is not null) noteWindow.AttachFocus(_focusStore,_focus,OpenFocusTask);
         PlaceNearMain(noteWindow, Left + ActualWidth - 45, Top + 85);
         if (fromPinnedDay) noteWindow.SetPinned(true);
         _noteWindows.Add(task.Id, noteWindow);
