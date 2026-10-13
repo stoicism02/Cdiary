@@ -50,9 +50,11 @@ internal static class Program
         var task = repository.AddTask(DateTime.Today, "复习笔记");
         task.Note = "# 今日学习\r\n\r\n**Redis** 缓存复习\r\n\r\n- [ ] 阅读资料\r\n- [x] 整理笔记\r\n\r\n## 常用命令\r\n\r\n```sql\r\nSELECT * FROM tasks;\r\n```\r\n\r\n| 项目 | 进度 |\r\n| --- | --- |\r\n| 索引 | 已复习 |\r\n";
         repository.SaveTask(task);
+        var minimal = Environment.GetEnvironmentVariable("CDIARY_TEST_MINIMAL") == "1";
         using var surface = new HwndSource(new HwndSourceParameters("Document editor offscreen verification")
-            { Width = 800, Height = 600, PositionX = -32000, PositionY = -32000, WindowStyle = unchecked((int)0x80000000) });
-        using var host = new DocumentNoteHost { Repository = repository };
+            { Width = 800, Height = 600, PositionX = -32000, PositionY = -32000, WindowStyle = unchecked((int)(minimal ? 0x90000000 : 0x80000000)), ExtendedWindowStyle = 0x08000080 });
+        using var host = new DocumentNoteHost(minimal) { Repository = repository };
+        if (minimal) host.Ready += () => host.Browser!.PostWebMessageAsJson("{\"kind\":\"minimalSticky\"}");
         host.Notice += Console.WriteLine;
         surface.RootVisual = host;
         Layout(host, 800, 600); host.SetTask(task);
@@ -60,6 +62,7 @@ internal static class Program
         Console.WriteLine($"编辑器初始化：{startup.ElapsedMilliseconds} ms");
         await Task.Delay(500);
         var original = task.Note;
+        if (minimal) Check(await Eval<bool>(host,"document.documentElement.classList.contains('minimal-sticky') && getComputedStyle(document.body).backgroundColor==='rgba(0, 0, 0, 0)' && getComputedStyle(document.querySelector('.vditor-reset')).color==='rgb(48, 58, 61)'"), "透明合成编辑器背景透明且正文不透明");
         Check(await Eval<bool>(host, "!!document.querySelector('.vditor-reset h1') && !!document.querySelector('.vditor-reset table') && document.querySelectorAll('.vditor-reset input[type=checkbox]').length===2"), "标题、表格和待办原生可编辑");
         Check(task.Note == original && repository.ReadNoteBackup(task.Id) is null, "仅打开旧笔记不会格式化原文或建立多余备份");
         if (args.Length > 0)
@@ -74,6 +77,13 @@ internal static class Program
         await host.FlushAsync();
         Check(repository.LoadTasks(DateTime.Today).Single().Note == task.Note, "真实浏览器输入同步模型并写入 SQLite");
         Check(repository.ReadNoteBackup(task.Id) == original, "首次编辑保留原 Markdown 备份");
+        await Key(host,"ArrowLeft","ArrowLeft",37);
+        await Until(() => Eval<bool>(host, "!!island.editor.vditor.wysiwyg.popover.querySelector('[data-type=remove]')"));
+        Check(await Eval<bool>(host, "getComputedStyle(island.editor.vditor.wysiwyg.popover).display==='none'"), "正文输入时不显示遮挡文字的段落操作浮层");
+        await host.Browser.ExecuteScriptAsync("(()=>{const p=document.querySelector('.vditor-reset table th');const r=document.createRange();r.selectNodeContents(p);r.collapse(true);getSelection().removeAllRanges();getSelection().addRange(r);p.dispatchEvent(new MouseEvent('click',{bubbles:true}))})()");
+        await Key(host,"ArrowRight","ArrowRight",39);
+        await Until(() => Eval<bool>(host, "!!island.editor.vditor.wysiwyg.popover.querySelector('input')"));
+        Check(await Eval<bool>(host, "(()=>{const p=island.editor.vditor.wysiwyg.popover;return getComputedStyle(p).display!=='none' && [...p.querySelectorAll('[data-type=up],[data-type=down],[data-type=remove]')].every(b=>getComputedStyle(b).display==='none')})()"), "表格编辑控件保留，上移下移删除按钮隐藏");
         await host.Browser.ExecuteScriptAsync("document.querySelector('.vditor-reset input[type=checkbox]').click()");
         await Until(() => Task.FromResult(task.Note.Contains("- [X] 阅读资料")));
         Check(!task.IsDone, "笔记复选框可交互且不改变外层任务状态");

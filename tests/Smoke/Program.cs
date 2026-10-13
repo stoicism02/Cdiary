@@ -1,4 +1,4 @@
-using Cdiary;
+﻿using Cdiary;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -136,8 +136,9 @@ var completedPreviewTask = repeatRepository.LoadTasks(previewDay).Single();
 completedPreviewTask.IsDone = true;
 repeatRepository.SaveTask(completedPreviewTask);
 var completedCalendar = repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Single();
-Check(completedCalendar.IsDone && completedCalendar.TaskId == completedPreviewTask.Id && completedCalendar.CompletedAt is not null,
-    "月历保留已完成任务和完成时间，不重复生成预览");
+Check(!completedCalendar.IsDone && completedCalendar.TaskId == completedPreviewTask.Id
+    && repeatRepository.LoadCalendarEntries(DateTime.Today, DateTime.Today.AddDays(1)).Any(e => e.TaskId == completedPreviewTask.Id && e.IsDone && e.CompletedAt is not null),
+    "提前完成任务保留原计划并在实际完成日标绿，不重复生成预览");
 repeatRepository.DeleteTask(completedPreviewTask.Id);
 Check(repeatRepository.LoadCalendarEntries(previewDay, previewDay.AddDays(1)).Count == 0,
     "删除的重复任务不在月历重新预览");

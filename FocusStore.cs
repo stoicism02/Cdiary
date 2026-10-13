@@ -6,8 +6,10 @@ namespace Cdiary;
 public sealed class FocusStore
 {
     private readonly string _connectionString;
+    private readonly DiaryRepository _repository;
     public FocusStore(DiaryRepository repository)
     {
+        _repository = repository;
         _connectionString = new SqliteConnectionStringBuilder { DataSource = repository.DatabasePath }.ToString();
         using var connection = Open();
         using var command = connection.CreateCommand();
@@ -27,7 +29,9 @@ public sealed class FocusStore
     public void Save(FocusSession session, int? expectedRevision)
     {
         using var connection = Open();
+        using var transaction = connection.BeginTransaction();
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = expectedRevision is null
             ? "INSERT INTO focus_sessions(id,task_id,state,revision,started_utc,payload) VALUES($id,$task,$state,$revision,$started,$payload);"
             : "UPDATE focus_sessions SET state=$state,revision=$revision,payload=$payload WHERE id=$id AND revision=$expected;";
@@ -39,6 +43,20 @@ public sealed class FocusStore
         command.Parameters.AddWithValue("$payload", JsonSerializer.Serialize(session));
         command.Parameters.AddWithValue("$expected", expectedRevision ?? -1);
         if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("专注记录已变化，请重新加载后重试。");
+        if (expectedRevision is null && !session.IsBreak)
+        {
+            using var day = connection.CreateCommand(); day.Transaction = transaction;
+            day.CommandText = """
+                INSERT INTO task_days(task_id,day,deadline,updated_at)
+                SELECT id,$day,deadline,$now FROM tasks WHERE id=$id
+                ON CONFLICT(task_id,day) DO UPDATE SET planned=1,shelved=0,updated_at=$now;
+                """;
+            day.Parameters.AddWithValue("$id",session.TaskId);
+            day.Parameters.AddWithValue("$day", session.StartedUtc.LocalDateTime.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture));
+            day.Parameters.AddWithValue("$now",DateTime.Now.ToString("O")); day.ExecuteNonQuery();
+        }
+        transaction.Commit();
+        if (expectedRevision is null && !session.IsBreak) _repository.NotifyPlanningChanged();
     }
     public IReadOnlyList<FocusSession> Read(long? taskId = null, bool activeOnly = false)
     {

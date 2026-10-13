@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -78,18 +78,18 @@ internal static class Program
         for (var index = 0; index < 8; index++) repository.AddTask(DateTime.Today, $"月历任务 {index}");
         var past = repository.AddTask(DateTime.Today.AddDays(-1), "补完昨天的安排"); past.IsDone = true; repository.SaveTask(past);
         var history = repository.LoadCalendarEntries(DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1));
-        Check(history.Single(entry => entry.TaskId == past.Id) is { IsDone: true, State: "Done" } pastEntry
-            && pastEntry.Date == DateTime.Today.AddDays(-1) && pastEntry.CompletedAt?.Date == DateTime.Today,
-            "补完过去任务仍在原计划日期展示，保存真实完成日期");
-        Check(new CalendarEntry(DateTime.Today.AddDays(-1), "旧任务", 1, null).State == "Overdue"
+        Check(history.Single(entry => entry.TaskId == past.Id && entry.IsDone) is { IsDone: true, State: "Done" } pastEntry
+            && pastEntry.Date == DateTime.Today && pastEntry.CompletedAt?.Date == DateTime.Today,
+            "补完过去任务在真实完成日展示绿色记录");
+        Check(new CalendarEntry(DateTime.Today.AddDays(-1), "旧任务", 1, null, WasOverdue: true).State == "Overdue"
             && new CalendarEntry(DateTime.Today, "今天", 2, null).State == "Today"
             && new CalendarEntry(DateTime.Today.AddDays(1), "未来", 3, null).State == "Future", "区分逾期、今日与未来待办");
         Find<RadioButton>("CalendarTab").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Layout(760, 580);
         var todayCell = window.CalendarDays.Single(day => day.IsToday);
-        Check(todayCell.Entries.Count == 10 && todayCell.Summary == "1/10" && todayCell.HasOverflow, "月历包含所有任务、每日完成统计与溢出入口");
+        Check(todayCell.Entries.Count == 11 && todayCell.Summary == "2/11" && todayCell.HasOverflow, "月历包含所有任务、每日完成统计与溢出入口");
         var more = Descendants<Button>(Find<Border>("CalendarPage")).First(button => button.DataContext == todayCell && Equals(button.Content, todayCell.OverflowLabel));
         more.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Layout(760, 580);
-        Check(Visible("CalendarDayOverlay") && Find<ItemsControl>("CalendarDayEntries").Items.Count == 10, "点击还有N项展开完整当天清单");
+        Check(Visible("CalendarDayOverlay") && Find<ItemsControl>("CalendarDayEntries").Items.Count == 11, "点击还有N项展开完整当天清单");
         var completedButton = Descendants<Button>(Find<ItemsControl>("CalendarDayEntries")).First(button => button.DataContext is CalendarEntry { TaskId: var id } && id == done.Id);
         completedButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Layout(760, 580);
         Check(window.SelectedTask?.Id == done.Id && window.IsCompactDetailOpen && Find<MarkdownNoteView>("TaskNoteEditor").Text == done.Note
@@ -97,22 +97,22 @@ internal static class Program
         Find<RadioButton>("CalendarTab").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
         Find<RadioButton>("CalendarDoneFilter").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Layout(760, 580);
         Check(window.CalendarDays.SelectMany(day => day.Entries).All(entry => entry.IsDone)
-            && window.CalendarDays.Single(day => day.IsToday).Summary == "1/10", "已完成筛选不改变每日完整统计");
+            && window.CalendarDays.Single(day => day.IsToday).Summary == "2/11", "已完成筛选不改变每日完整统计");
         Find<RadioButton>("CalendarPendingFilter").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
         Check(window.CalendarDays.Single(day => day.IsToday).Entries.Count == 9 && window.CalendarDays.SelectMany(day => day.Entries).All(entry => !entry.IsDone), "未完成筛选保留待办");
         Find<RadioButton>("CalendarAllFilter").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-        Check(window.CalendarDays.Single(day => day.IsToday).Entries.Count == 10, "全部筛选恢复完整月历");
+        Check(window.CalendarDays.Single(day => day.IsToday).Entries.Count == 11, "全部筛选恢复完整月历");
         Layout(760, 580);
         todayCell = window.CalendarDays.Single(day => day.IsToday);
         Descendants<Button>(Find<Border>("CalendarPage")).First(button => button.DataContext == todayCell && Equals(button.Content, todayCell.OverflowLabel))
             .RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
         var liveTask = window.Tasks.First(item => !item.IsDone);
         liveTask.IsDone = true;
-        Check(window.CalendarDays.Single(day => day.IsToday).Summary == "2/10"
+        Check(window.CalendarDays.Single(day => day.IsToday).Summary == "3/11"
             && Find<ItemsControl>("CalendarDayEntries").Items.Cast<CalendarEntry>().Single(entry => entry.TaskId == liveTask.Id).IsDone,
             "其他入口完成任务时月历与已展开清单同步更新");
         liveTask.IsDone = false;
-        Check(window.CalendarDays.Single(day => day.IsToday).Summary == "1/10", "恢复待办后月历统计同步恢复");
+        Check(window.CalendarDays.Single(day => day.IsToday).Summary == "2/11", "恢复待办后月历统计同步恢复");
         var stickyTasks = new System.Collections.ObjectModel.ObservableCollection<DiaryTask>();
         for (var index = 0; index < 8; index++)
         {

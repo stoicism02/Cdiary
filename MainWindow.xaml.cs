@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -28,6 +28,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private DayOption? _selectedDay;
     private DiaryTask? _selectedTask;
     private ObservableCollection<DiaryTask> _tasks = new();
+    private readonly HashSet<DiaryTask> _observedTasks = new();
+    private DiaryTask? _standaloneSelection;
     private string _dayMemo = "";
     private string _searchStatus = "输入关键词，按回车搜索";
     private bool _memoDirty;
@@ -66,13 +68,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _dayTimer = new DispatcherTimer();
         _dayTimer.Tick += (_, _) => RefreshForNewDay();
         SearchResults.CollectionChanged += (_, _) => Changed(nameof(HasSearchResults));
-        ActiveTasks = CollectionViewSource.GetDefaultView(_tasks);
-        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
+        ActiveTasks = new ListCollectionView(_tasks);
+        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false } task && !task.IsShelvedOn(_selectedDate);
         DataContext = this;
         AutostartCheck.IsChecked = StartupSettings.IsEnabled;
         RefreshDays();
         OpenDate(DateTime.Today);
         ScheduleDayChange();
+        _repository.PlanningChanged += PlanningChanged;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -99,8 +102,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public string OverdueCountLabel => $"之前没做完 · {OverdueTasks.Count}";
     public string CalendarMonthLabel => _calendarMonth.ToString("yyyy年M月", _chinese);
     public ICollectionView ActiveTasks { get; private set; }
-    public bool HasActiveTasks => Tasks.Any(task => !task.IsDone);
-    public string EmptyTaskMessage => Tasks.Count == 0 ? "这一天还没有安排任务" : "待办已清空，完成的任务在左侧“完成”里";
+    public bool HasActiveTasks => Tasks.Any(task => !task.IsDone && !task.IsShelvedOn(_selectedDate));
+    public string EmptyTaskMessage => Tasks.Count == 0 ? "这一天还没有安排任务" : "待办已收起或完成，可查看下方及“完成”页";
     public string CompletedCountLabel => $"已完成 {_completedTasks.Count} 项任务";
     public bool HasCompletedTasks => CompletedGroups.Count > 0;
     public bool HasSearchResults => SearchResults.Count > 0;
@@ -121,11 +124,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         get => _tasks;
         private set
         {
-            foreach (var task in _tasks) task.PropertyChanged -= TaskChanged;
+            foreach (var task in _observedTasks) task.PropertyChanged -= TaskChanged;
+            _observedTasks.Clear();
             _tasks = value;
-            foreach (var task in _tasks) task.PropertyChanged += TaskChanged;
-            ActiveTasks = CollectionViewSource.GetDefaultView(_tasks);
-            ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
+            foreach (var task in _tasks) { task.PropertyChanged += TaskChanged; _observedTasks.Add(task); }
+            ActiveTasks = new ListCollectionView(_tasks);
+            ActiveTasks.Filter = item => item is DiaryTask { IsDone: false } task && !task.IsShelvedOn(_selectedDate);
             Changed();
             Changed(nameof(ActiveTasks));
             Changed(nameof(HasActiveTasks));
@@ -139,6 +143,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         get => _selectedTask;
         set
         {
+            if (_standaloneSelection is not null) _standaloneSelection.PropertyChanged -= TaskChanged;
+            _standaloneSelection = value is not null && !Tasks.Contains(value) && !OverdueTasks.Contains(value) ? value : null;
+            if (_standaloneSelection is not null) _standaloneSelection.PropertyChanged += TaskChanged;
             _selectedTask = value;
             TaskFocus.Task=value;TaskFocus.Reload();
             ReminderBox.Text = value?.ReminderTime?.ToString(@"hh\:mm") ?? "";
@@ -200,22 +207,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _repository.EnsureOccurrences(_selectedDate);
         if (_dayWindows.TryGetValue(_selectedDate, out var dayWindow))
         {
-            var known = dayWindow.Tasks.Select(task => task.Id).ToHashSet();
-            foreach (var newTask in _repository.LoadTasks(_selectedDate))
-                if (known.Add(newTask.Id)) dayWindow.Tasks.Add(newTask);
+            MergeDay(dayWindow.Tasks, _selectedDate);
             Tasks = dayWindow.Tasks;
         }
         else
         {
-            var loadedTasks = _repository.LoadTasks(_selectedDate);
-            for (var i = 0; i < loadedTasks.Count; i++)
-                if (_noteWindows.TryGetValue(loadedTasks[i].Id, out var noteWindow))
-                    loadedTasks[i] = noteWindow.Task;
-            Tasks = new ObservableCollection<DiaryTask>(loadedTasks);
+            Tasks = new ObservableCollection<DiaryTask>(_repository.LoadTasks(_selectedDate).Select(ResolveTask));
         }
+        RefreshShelvedTasks();
         _dayMemo = _repository.LoadDayMemo(_selectedDate);
         _memoDirty = false;
-        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone);
+        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone && !task.IsShelvedOn(_selectedDate));
         Dispatcher.BeginInvoke(new Action(() =>
         {
             if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
@@ -278,6 +280,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 RefreshDays();
                 RefreshOverdueTasks();
             }
+            PlanningChanged();
         }
         else if (refreshOverdue && _selectedDate == today) RefreshOverdueTasks();
         ScheduleDayChange();
@@ -295,7 +298,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ShowHomePage();
         OpenDate(date);
-        SelectedTask = Tasks.FirstOrDefault(task => task.Id == id);
+        SelectedTask = Tasks.FirstOrDefault(task => task.Id == id) ?? (_repository.FindTask(id) is { } row ? ResolveTask(row) : null);
         if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
         if (_layoutMode == WindowLayoutMode.Compact && SelectedTask is not null) ShowCompactDetails();
     }
@@ -426,7 +429,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void TaskChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not DiaryTask task) return;
-        if (e.PropertyName == nameof(DiaryTask.ReminderLabel)) return;
+        if (e.PropertyName is not (nameof(DiaryTask.Title) or nameof(DiaryTask.Note) or nameof(DiaryTask.IsDone) or nameof(DiaryTask.ReminderTime))) return;
         _dirtyTasks.Add(task);
         if (e.PropertyName is nameof(DiaryTask.IsDone) or nameof(DiaryTask.ReminderTime))
         {
@@ -435,6 +438,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Changed(nameof(ProgressLabel));
             if (e.PropertyName == nameof(DiaryTask.IsDone))
             {
+                PlanningChanged();
                 if (task.IsDone && OverdueTasks.Remove(task))
                 {
                     task.PropertyChanged -= TaskChanged;
@@ -485,6 +489,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Hide();
             return;
         }
+        _planningClosed = true;
+        _repository.PlanningChanged -= PlanningChanged;
         foreach (var dayWindow in _dayWindows.Values.ToArray()) dayWindow.Close();
         foreach (var noteWindow in _noteWindows.Values.ToArray()) noteWindow.Close();
         _dayTimer.Stop();
@@ -586,7 +592,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_layoutMode != WindowLayoutMode.Compact) return;
         for (var node = e.OriginalSource as DependencyObject; node is not null && node != TaskList; node = VisualTreeHelper.GetParent(node))
         {
-            if (node is System.Windows.Controls.CheckBox) return;
+            if (node is System.Windows.Controls.Primitives.ButtonBase) return;
             if (node is ListBoxItem { DataContext: DiaryTask task })
             { SelectedTask = task; ShowCompactDetails(); return; }
         }
@@ -662,7 +668,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ShowHomePage();
         OpenDate(entry.Date);
         SelectedTask = entry.TaskId is long id
-            ? Tasks.FirstOrDefault(task => task.Id == id)
+            ? Tasks.FirstOrDefault(task => task.Id == id) ?? (_repository.FindTask(id) is { } row ? ResolveTask(row) : null)
             : Tasks.FirstOrDefault(task => task.RecurrenceRuleId == entry.RuleId);
         if (SelectedTask is not null) TaskList.ScrollIntoView(SelectedTask);
         CalendarDayOverlay.Visibility = Visibility.Collapsed;
@@ -720,7 +726,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ?? (_noteWindows.TryGetValue(row.Id, out var noteWindow) ? noteWindow.Task : null)
             ?? row;
         live.IsDone = false;
+        PlanningChanged();
         _repository.SaveTask(live);
+        if (live.IsShelvedOn(DateTime.Today) && live.Date <= DateTime.Today) _repository.SetDayShelved(live, DateTime.Today, false);
         _scheduler.Refresh();
         ReloadCompleted();
     }
@@ -742,6 +750,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void RepeatRule_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedTask is not { } task) return;
+        if (task.CarryForward) { System.Windows.MessageBox.Show(this, "请先在日期与推进中关闭持续推进，再设置重复。", "小岛日记"); return; }
         FlushEdits();
         if (new RepeatRuleWindow(_repository, task) { Owner = this }.ShowDialog() == true)
         {
@@ -806,6 +815,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (title.Length == 0) return;
         var task = _repository.AddTask(_selectedDate, title);
         task.PropertyChanged += TaskChanged;
+        _observedTasks.Add(task);
         Tasks.Add(task);
         SelectedTask = task;
         TaskList.ScrollIntoView(task);
@@ -823,8 +833,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _dirtyTasks.Remove(task);
         task.PropertyChanged -= TaskChanged;
         _repository.DeleteTask(task.Id);
+        PlanningChanged();
         Tasks.Remove(task);
-        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone);
+        SelectedTask = Tasks.FirstOrDefault(task => !task.IsDone && !task.IsShelvedOn(_selectedDate));
         _scheduler.Refresh();
         Changed(nameof(ProgressLabel));
         Changed(nameof(HasActiveTasks));
@@ -842,7 +853,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        var dayWindow = new DailyTodoWindow(_selectedDate, Tasks, OpenTaskNote, SaveCompletionFromDaily);
+        var dayWindow = new DailyTodoWindow(_selectedDate, Tasks, OpenTaskNote, SaveCompletionFromDaily, _repository);
         PlaceNearMain(dayWindow, Left + 205, Top + 80);
         _dayWindows.Add(_selectedDate, dayWindow);
         dayWindow.Closed += (_, _) => _dayWindows.Remove(dayWindow.Date);
@@ -851,6 +862,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void SaveCompletionFromDaily(DiaryTask task)
     {
+        PlanningChanged();
         if (Tasks.Contains(task)) return;
         _repository.SaveTask(task);
         if (_selectedDate == DateTime.Today) RefreshOverdueTasks();

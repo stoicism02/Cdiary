@@ -1,0 +1,45 @@
+<Window x:Class="Cdiary.TaskPlanWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Cdiary"
+ Title="日期与推进" Width="380" SizeToContent="Height" WindowStartupLocation="CenterOwner"
+ WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+ ShowInTaskbar="False" FontFamily="Microsoft YaHei UI" FontSize="13" Foreground="{DynamicResource TextInk}">
+ <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries>
+  <Style TargetType="DatePicker">
+   <Setter Property="HorizontalAlignment" Value="Left"/><Setter Property="Width" Value="235"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DatePicker">
+    <Grid>
+     <Border Background="{DynamicResource PaperSurface}" BorderBrush="#C4B89E" BorderThickness="1" CornerRadius="12" Padding="10,6">
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <DatePickerTextBox x:Name="PART_TextBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextInk}" VerticalContentAlignment="Center" Padding="0">
+        <DatePickerTextBox.Template><ControlTemplate TargetType="DatePickerTextBox"><ScrollViewer x:Name="PART_ContentHost" Background="Transparent" VerticalAlignment="Center"/></ControlTemplate></DatePickerTextBox.Template>
+       </DatePickerTextBox>
+       <Button x:Name="PART_Button" Grid.Column="1" Content="▦" Style="{DynamicResource Pill}" FontSize="15" Padding="7,1" Margin="8,0,0,0" ToolTip="选择日期" Focusable="False"/>
+      </Grid>
+     </Border>
+     <Popup x:Name="PART_Popup" Placement="Bottom" StaysOpen="False" AllowsTransparency="True"/>
+    </Grid>
+    <ControlTemplate.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger></ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+ </ResourceDictionary></Window.Resources>
+ <Border Background="{DynamicResource WindowSurface}" BorderBrush="#D8CCB6" BorderThickness="1" CornerRadius="18" Padding="22">
+  <StackPanel>
+   <Grid MouseLeftButtonDown="Header_Drag"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock Text="日期与推进" FontSize="19" FontWeight="SemiBold" VerticalAlignment="Center"/>
+    <Button Grid.Column="1" Content="×" Style="{DynamicResource NoteCloseButton}" Click="Cancel_Click"/>
+   </Grid>
+   <TextBlock x:Name="TaskTitle" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Muted}" Margin="0,7,0,18"/>
+   <TextBlock Text="安排日期" Margin="0,0,0,6"/>
+   <DatePicker x:Name="StartDate" SelectedDateFormat="Long" Background="{DynamicResource PaperSurface}" BorderBrush="#D8CCB6" Padding="6"/>
+   <Grid Margin="0,17,0,6"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock Text="截止日期（可选）" VerticalAlignment="Center"/>
+    <Button Grid.Column="1" Content="清除" Style="{DynamicResource Pill}" FontSize="11" Padding="9,3" Click="ClearDeadline_Click"/>
+   </Grid>
+   <DatePicker x:Name="DeadlineDate" SelectedDateFormat="Long" Background="{DynamicResource PaperSurface}" BorderBrush="#D8CCB6" Padding="6"/>
+   <CheckBox x:Name="CarryCheck" Content="持续推进" Margin="0,21,0,7" FontWeight="SemiBold"/>
+   <TextBlock x:Name="CarryHint" Text="从安排日期起，每天出现在待办中，直到完成。&#10;笔记和专注时间都保留在同一个任务里。" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Muted}" LineHeight="19"/>
+   <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerInk}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+   <Button Content="保存安排" Style="{DynamicResource PrimaryPill}" HorizontalAlignment="Right" Margin="0,12,0,0" Click="Save_Click"/>
+  </StackPanel>
+ </Border>
+</Window>

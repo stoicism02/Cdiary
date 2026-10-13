@@ -67,6 +67,7 @@
                 <ControlTemplate.Triggers>
                     <DataTrigger Binding="{Binding State}" Value="Done"><Setter Property="Background" Value="#DDF7E9"/><Setter Property="Foreground" Value="#397457"/></DataTrigger>
                     <DataTrigger Binding="{Binding State}" Value="Today"><Setter Property="Background" Value="#FFF0D3"/><Setter Property="Foreground" Value="#946421"/></DataTrigger>
+                    <DataTrigger Binding="{Binding State}" Value="Progress"><Setter Property="Background" Value="#DDF3EE"/><Setter Property="Foreground" Value="#237A71"/></DataTrigger>
                     <DataTrigger Binding="{Binding State}" Value="Overdue"><Setter Property="Background" Value="#FBE2DD"/><Setter Property="Foreground" Value="#A34F45"/></DataTrigger>
                     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="Opacity" Value="0.75"/></Trigger>
                 </ControlTemplate.Triggers>
@@ -305,7 +306,7 @@
                 <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="12"/><RowDefinition x:Name="MemoRow" Height="155"/></Grid.RowDefinitions>
                 <Border x:Name="TasksCard" Background="{DynamicResource Card}" CornerRadius="24" Padding="20,19">
                     <Grid>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <StackPanel><TextBlock x:Name="TaskDateSubtitle" Text="{Binding SelectedDateLabel}" Foreground="{DynamicResource Muted}" FontSize="11"/>
                                 <TextBlock Text="{Binding TaskHeader}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource Ink}" Margin="0,3,0,0"/></StackPanel>
@@ -343,12 +344,19 @@
                             <ListBox.ItemTemplate><DataTemplate><Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <CheckBox IsChecked="{Binding IsDone, Mode=TwoWay}" Click="TaskCheck_Click" Style="{StaticResource IslandCheck}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="2,0,8,0">
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="2,0,8,0">
                                     <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers>
                                         <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="TextDecorations" Value="Strikethrough"/><Setter Property="Foreground" Value="{DynamicResource Muted}"/></DataTrigger>
                                     </Style.Triggers></Style></TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Grid.Column="2" Text="{Binding ReminderLabel}" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PlanLabel}" FontSize="10" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Muted}"/><Style.Triggers><DataTrigger Binding="{Binding IsOverdue}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DangerInk}"/></DataTrigger><DataTrigger Binding="{Binding PlanLabel}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ReminderLabel}" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center"/>
+                                    <Button Content="⋯" Style="{DynamicResource Pill}" Padding="6,1" Margin="5,0,0,0" ToolTip="日期与推进、今天先到这里" Click="TaskPlanning_Click"/>
+                                </StackPanel>
                             </Grid></DataTemplate></ListBox.ItemTemplate>
                         </ListBox>
                         <TextBlock Text="{Binding EmptyTaskMessage}" Foreground="{DynamicResource Muted}" FontSize="12"
@@ -358,7 +366,16 @@
                             </Style></TextBlock.Style>
                         </TextBlock>
                         </Grid>
-                        <Grid Grid.Row="4" Margin="0,10,0,0">
+                        <Expander Grid.Row="4" Header="{Binding ShelvedLabel}" FontSize="11" Margin="0,7,0,0">
+                            <Expander.Style><Style TargetType="Expander"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasShelvedTasks}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Expander.Style>
+                            <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding ShelvedTasks}"><ItemsControl.ItemTemplate><DataTemplate>
+                                <Grid Margin="4,5"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Content="继续处理" Style="{DynamicResource Pill}" FontSize="10" Padding="8,3" Click="ContinueTask_Click"/>
+                                </Grid>
+                            </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+                        </Expander>
+                        <Grid Grid.Row="5" Margin="0,10,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBox x:Name="NewTaskBox" Style="{DynamicResource PaperInput}" KeyDown="NewTaskBox_KeyDown" ToolTip="输入任务名称，按回车添加"/>
                             <Button Grid.Column="2" Content="＋ 添加" Style="{DynamicResource PrimaryPill}" Click="AddTask_Click"/>
@@ -390,6 +407,10 @@
                              Style="{DynamicResource PaperInput}" FontWeight="SemiBold" IsEnabled="{Binding HasSelectedTask}" Margin="0,0,0,11" ToolTip="编辑任务名称"/>
                     <Grid Grid.Row="3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><local:FocusBar x:Name="TaskFocus"/><local:MarkdownNoteView x:Name="TaskNoteEditor" Grid.Row="1" DisplayOnly="True" Task="{Binding SelectedTask}" IsEnabled="{Binding HasSelectedTask}"/></Grid>
                     <StackPanel Grid.Row="4" Margin="0,13,0,0">
+                        <DockPanel Margin="0,0,0,7">
+                            <Button DockPanel.Dock="Right" Content="日期与推进" Style="{DynamicResource Pill}" FontSize="11" Padding="10,5" IsEnabled="{Binding HasSelectedTask}" Click="PlanTask_Click"/>
+                            <TextBlock Text="{Binding SelectedTask.PlanLabel}" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+                        </DockPanel>
                         <TextBlock Text="{Binding SelectedTask.CompletionLabel}" FontSize="11" Foreground="#397457" TextWrapping="Wrap"/>
                         <TextBlock Text="提醒时间 · 24 小时制，留空则不提醒" Foreground="{DynamicResource Muted}" FontSize="11"/>
                         <Grid Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="7"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -413,7 +434,7 @@
                     <Grid Margin="4,0,4,13"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="月历  ✿" FontSize="23" FontWeight="Bold" Foreground="{DynamicResource Ink}"/>
-                            <TextBlock Text="安排与完成，都留在这一天" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,3,0,0"/>
+                            <TextBlock Text="记录安排、实际投入和完成的每一天" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,3,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button x:Name="CalendarPreviousButton" Content="‹" Style="{DynamicResource IconPill}" Width="30" Height="31" Click="CalendarPrevious_Click" ToolTip="上个月"/>
@@ -429,7 +450,7 @@
                         <RadioButton x:Name="CalendarAllFilter" GroupName="CalendarFilters" Content="全部" IsChecked="True" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click"/>
                         <RadioButton x:Name="CalendarPendingFilter" GroupName="CalendarFilters" Content="未完成" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click" Margin="7,0,0,0"/>
                         <RadioButton x:Name="CalendarDoneFilter" GroupName="CalendarFilters" Content="已完成" Style="{StaticResource CompletedFilter}" Click="CalendarFilter_Click" Margin="7,0,0,0"/>
-                        <TextBlock Text="✓ 完成  ○ 今日  ! 逾期  ↻ 重复" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="14,5,0,5"/>
+                        <TextBlock Text="✓ 完成  ◷ 推进  ! 逾期  ○ 安排  ↻ 重复" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="14,5,0,5"/>
                     </WrapPanel>
                     <UniformGrid Grid.Row="2" Columns="7" Margin="2,0,2,2">
                         <TextBlock Text="周日"/><TextBlock Text="周一"/><TextBlock Text="周二"/><TextBlock Text="周三"/>

@@ -17,6 +17,7 @@ public partial class MarkdownNoteView
     public bool RetainDocumentForReading { get; set; }
     public bool DisplayOnly { get; set; }
     public bool WritingOnly { get; set; }
+    public bool MinimalSticky { get; set; }
     public DiaryRepository? DocumentRepository { get; set; }
     public bool IsDocumentReady => _documentHost?.IsReady == true;
     public void ShowSaveNotice(string text)
@@ -59,7 +60,8 @@ public partial class MarkdownNoteView
             if (_documentHost is { IsReady: true }) return;
             if (_documentHost is null)
             {
-                var createdHost = new DocumentNoteHost { Repository = DocumentRepository, StickyMode = RetainDocumentForReading, WritingOnly = WritingOnly };
+                var createdHost = new DocumentNoteHost(MinimalSticky) { Repository = DocumentRepository, StickyMode = RetainDocumentForReading, WritingOnly = WritingOnly };
+                if (MinimalSticky) createdHost.Ready += () => createdHost.Browser?.PostWebMessageAsJson("{\"kind\":\"minimalSticky\"}");
                 createdHost.SetPresentationVisible(false);
                 _documentHost = createdHost;
                 DocumentNotice.Visibility = Visibility.Collapsed;
@@ -80,7 +82,8 @@ public partial class MarkdownNoteView
             await openingHost.PreparePresentationAsync(position);
             if (epoch != _documentEpoch || Task != task || !ReferenceEquals(openingHost, _documentHost)) return;
             NativePanel.Visibility = Visibility.Collapsed;
-            DocumentContainer.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "PaperSurface");
+            if (MinimalSticky) DocumentContainer.Background = System.Windows.Media.Brushes.Transparent;
+            else DocumentContainer.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "PaperSurface");
             DocumentPanel.IsHitTestVisible = true;
             openingHost.SetPresentationVisible(true);
             ResetOutline(); PlaceOutline();

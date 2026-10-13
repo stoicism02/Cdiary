@@ -4,13 +4,13 @@ using Microsoft.Data.Sqlite;
 
 namespace Cdiary;
 
-public sealed class DiaryRepository
+public sealed partial class DiaryRepository
 {
     public event Action<long, FocusEndReason>? TaskEnding;
     public List<DiaryTask> LoadFocusTasks()
     {
         using var connection = Open(); using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at FROM tasks WHERE completed=0 ORDER BY task_date DESC,id DESC;";
+        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at, deadline, carry_forward, (SELECT group_concat(day) FROM task_days WHERE task_id=tasks.id AND shelved=1) FROM tasks WHERE completed=0 ORDER BY task_date DESC,id DESC;";
         using var reader = command.ExecuteReader(); var tasks = new List<DiaryTask>();
         while(reader.Read()) tasks.Add(ReadTask(reader)); return tasks;
     }
@@ -29,6 +29,7 @@ public sealed class DiaryRepository
             Pooling = true
         }.ToString();
         Initialize();
+        InitializePlanning();
     }
 
     public string DatabasePath { get; }
@@ -180,13 +181,20 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
-            FROM tasks WHERE task_date = $date ORDER BY id;
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at, deadline, carry_forward, (SELECT group_concat(day) FROM task_days WHERE task_id=tasks.id AND shelved=1)
+            FROM tasks WHERE task_date = $date
+              OR EXISTS(SELECT 1 FROM task_days d WHERE d.task_id=tasks.id AND d.day=$date AND d.planned=1)
+              OR (completed=1 AND substr(completed_at,1,10)=$date)
+              OR ($date >= $today AND carry_forward=1 AND completed=0 AND task_date <= $date)
+            ORDER BY id;
             """;
         command.Parameters.AddWithValue("$date", Day(date));
+        command.Parameters.AddWithValue("$today", Day(DateTime.Today));
         using var reader = command.ExecuteReader();
         var result = new List<DiaryTask>();
         while (reader.Read()) result.Add(ReadTask(reader));
+        reader.Close();
+        if (date.Date == DateTime.Today) RecordPlans(result, date);
         return result;
     }
 
@@ -195,8 +203,10 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
-            FROM tasks WHERE completed=0 AND task_date < $today ORDER BY task_date DESC, id DESC;
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at, deadline, carry_forward, (SELECT group_concat(day) FROM task_days WHERE task_id=tasks.id AND shelved=1)
+            FROM tasks WHERE completed=0 AND task_date < $today AND carry_forward=0
+              AND NOT EXISTS(SELECT 1 FROM task_days d WHERE d.task_id=tasks.id AND d.day=$today AND d.planned=1)
+            ORDER BY task_date DESC, id DESC;
             """;
         command.Parameters.AddWithValue("$today", Day(today.Date));
         using var reader = command.ExecuteReader();
@@ -251,7 +261,7 @@ public sealed class DiaryRepository
                         entries.Add(new CalendarEntry(date, rule.Title, null, rule.Id));
             }
         }
-        return entries.OrderBy(entry => entry.Date).ThenBy(entry => entry.IsProjected).ThenBy(entry => entry.Title).ToList();
+        return LoadPlanningCalendar(start, endExclusive).Concat(entries.Where(entry => entry.IsProjected)).OrderBy(entry => entry.Date).ThenBy(entry => entry.IsProjected).ThenBy(entry => entry.Title).ToList();
     }
 
     public DiaryTask AddTask(DateTime date, string title)
@@ -308,7 +318,7 @@ public sealed class DiaryRepository
         }
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = "DELETE FROM tasks WHERE id=$id; DELETE FROM note_originals WHERE task_id=$id; DELETE FROM note_recovery WHERE task_id=$id;";
+        command.CommandText = "DELETE FROM tasks WHERE id=$id; DELETE FROM note_originals WHERE task_id=$id; DELETE FROM note_recovery WHERE task_id=$id; DELETE FROM task_days WHERE task_id=$id;";
         command.Parameters.AddWithValue("$id", id);
         command.ExecuteNonQuery();
         transaction.Commit();
@@ -318,7 +328,7 @@ public sealed class DiaryRepository
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at FROM tasks WHERE completed=1 ORDER BY completed_at DESC, id DESC;";
+        command.CommandText = "SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at, deadline, carry_forward, (SELECT group_concat(day) FROM task_days WHERE task_id=tasks.id AND shelved=1) FROM tasks WHERE completed=1 ORDER BY completed_at DESC, id DESC;";
         using var reader = command.ExecuteReader();
         var result = new List<DiaryTask>();
         while (reader.Read()) result.Add(ReadTask(reader));
@@ -338,6 +348,7 @@ public sealed class DiaryRepository
     public long SaveRule(DiaryTask source, bool weekly, int weekdaysMask,
         string title, TimeSpan? reminderTime, DateTime? endDate = null)
     {
+        if (source.CarryForward) throw new InvalidOperationException("请先在日期与推进中关闭持续推进，再设置重复。");
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("任务名称不能为空。", nameof(title));
         if (weekly && (weekdaysMask & 127) == 0) throw new ArgumentException("请至少选择一天。", nameof(weekdaysMask));
         using var connection = Open();
@@ -509,7 +520,7 @@ public sealed class DiaryRepository
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at
+            SELECT id, task_date, title, note, completed, reminder_at, notified_at, recurrence_rule_id, completed_at, deadline, carry_forward, (SELECT group_concat(day) FROM task_days WHERE task_id=tasks.id AND shelved=1)
             FROM tasks
             WHERE completed=0 AND notified_at IS NULL AND reminder_at IS NOT NULL
               AND reminder_at <= $now
@@ -557,10 +568,13 @@ public sealed class DiaryRepository
         var date = DateTime.ParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var reminder = reader.IsDBNull(5) ? (TimeSpan?)null : Parse(reader.GetString(5)).TimeOfDay;
         var notified = reader.IsDBNull(6) ? (DateTime?)null : Parse(reader.GetString(6));
-        return new DiaryTask(reader.GetInt64(0), date, reader.GetString(2), reader.GetString(3),
+        var task = new DiaryTask(reader.GetInt64(0), date, reader.GetString(2), reader.GetString(3),
             reader.GetInt64(4) != 0, reminder, notified,
             reader.IsDBNull(7) ? null : reader.GetInt64(7),
             reader.IsDBNull(8) ? null : Parse(reader.GetString(8)));
+        task.ApplyPlanning(date, reader.IsDBNull(9) ? null : DateTime.ParseExact(reader.GetString(9), "yyyy-MM-dd", CultureInfo.InvariantCulture),
+            reader.GetInt64(10) != 0, reader.IsDBNull(11) ? [] : reader.GetString(11).Split(',').Select(s => DateTime.ParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        return task;
     }
 
     private static string Day(DateTime date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

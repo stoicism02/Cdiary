@@ -23,14 +23,14 @@ public sealed partial class DocumentNoteHost
         }
     }
     public bool IsReadOnly { get; private set; }
-    public void SetPresentationVisible(bool visible) => _web.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+    public void SetPresentationVisible(bool visible) => ((UIElement)_web).Visibility = visible ? Visibility.Visible : Visibility.Hidden;
     public async Task FocusEditorAsync()
     {
         if (_disposed || !IsReady) return;
         // DOM focus alone cannot move keyboard input from WPF into WebView2.
         // Never activate a window when the user has already switched away.
         if (Window.GetWindow(this) is { IsActive: false }) return;
-        _web.Focus();
+        ((UIElement)_web).Focus();
         await _web.ExecuteScriptAsync("window.island?.focus()");
     }
 

@@ -27,7 +27,23 @@ public sealed class DiaryTask : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public long Id { get; }
-    public DateTime Date { get; }
+    public DateTime Date { get; private set; }
+    public DateTime? Deadline { get; private set; }
+    public bool CarryForward { get; private set; }
+    public bool IsOverdue => !IsDone && Deadline?.Date < DateTime.Today;
+    private HashSet<DateTime> _shelvedDays = new();
+    public bool IsShelvedOn(DateTime date) => _shelvedDays.Contains(date.Date);
+    public void SyncPlanning(DiaryTask source) => ApplyPlanning(source.Date, source.Deadline, source.CarryForward, source._shelvedDays);
+    public string PlanLabel => string.Join(" · ", new[] {
+        CarryForward ? "持续推进" : "",
+        Deadline is { } due ? !IsDone && due.Date < DateTime.Today ? $"逾期 {(DateTime.Today-due.Date).Days} 天" : $"{due:M月d日} 截止" : ""
+    }.Where(s => s.Length > 0));
+    public void ApplyPlanning(DateTime date, DateTime? deadline, bool carryForward, IEnumerable<DateTime>? shelvedDays = null)
+    {
+        Date = date.Date; Deadline = deadline?.Date; CarryForward = carryForward;
+        if (shelvedDays is not null) _shelvedDays = shelvedDays.Select(d => d.Date).ToHashSet();
+        Changed(nameof(Date)); Changed(nameof(Deadline)); Changed(nameof(CarryForward)); Changed(nameof(PlanLabel)); Changed(nameof(IsOverdue)); Changed(nameof(IsShelvedOn));
+    }
     public DateTime? NotifiedAt { get; set; }
     public DateTime? CompletedAt { get; private set; }
     public string CompletionLabel => IsDone ? CompletedAt is { } at ? $"✓ 已完成 · {at:yyyy年M月d日 HH:mm}" : "✓ 已完成 · 完成时间未记录" : "";
@@ -45,6 +61,8 @@ public sealed class DiaryTask : INotifyPropertyChanged
             CompletedAt = value ? DateTime.Now : null;
             Changed();
             Changed(nameof(CompletionLabel));
+            Changed(nameof(PlanLabel));
+            Changed(nameof(IsOverdue));
         }
     }
     public TimeSpan? ReminderTime

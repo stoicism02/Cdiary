@@ -9,6 +9,9 @@ body{display:flex;flex-direction:column;border-radius:14px}button{font:inherit;c
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 .vditor .vditor-wysiwyg,.vditor .vditor-reset{background:var(--paper)!important;color:var(--ink)!important}.vditor .vditor-reset h1,.vditor .vditor-reset h2{border-bottom:0!important}.vditor .vditor-reset td{background:var(--paper)!important}.vditor .vditor-reset th{text-align:left!important}.vditor-toolbar button[data-type=headings]{font-family:inherit;font-size:12px;padding:3px;width:46px}.vditor-toolbar button[data-type=headings]:after{content:attr(aria-label)}
 .vditor-copy{display:none}
+/* Block movement controls obscure the line being edited. Keep contextual inputs. */
+.island-block-popover > :is([data-type="up"],[data-type="down"],[data-type="remove"]){display:none!important}
+.island-block-popover:not(:has(> :not([data-type="up"],[data-type="down"],[data-type="remove"]))){display:none!important}
 .vditor .vditor-reset img{max-width:100%!important;height:auto!important;border-radius:9px;background:#f0e8d8;cursor:zoom-in;object-fit:contain}
 .vditor-toolbar button[data-type=note-outline]{width:32px;padding:3px;font-size:11px}.vditor-reset .island-outline-target{background:#ddf7f1!important;border-radius:5px}.vditor-reset h1,.vditor-reset h2,.vditor-reset h3,.vditor-reset h4,.vditor-reset h5,.vditor-reset h6{scroll-margin-top:12px}
 /* Text menus have their own row sizing; compact icon dimensions belong only to the toolbar. */
@@ -30,3 +33,18 @@ body{display:flex;flex-direction:column;border-radius:14px}button{font:inherit;c
 .vditor-toolbar .vditor-toolbar__item>button{height:28px}
 .vditor-reset code,.vditor-reset pre code{font-size:12px}
 @media(max-height:220px){.vditor-toolbar{height:34px;min-height:34px;padding:2px 6px!important}footer{height:20px}}
+/* Quiet task sticky: WPF owns the independent background/image layer. */
+html.minimal-sticky{--paper:#f7f9f8;--ink:#303a3d;--muted:#737f82;--line:#cedbd680;--accent:#438f83;--mint:#dfeeeb}
+html.minimal-sticky,html.minimal-sticky body,.minimal-sticky #editor,.minimal-sticky .vditor-content,.minimal-sticky .vditor .vditor-wysiwyg,.minimal-sticky .vditor .vditor-reset,.minimal-sticky .vditor-toolbar{background:transparent!important}
+.minimal-sticky body{border-radius:0}
+.minimal-sticky .vditor-toolbar{padding:4px 0!important}
+.minimal-sticky .vditor-wysiwyg .vditor-reset{padding:12px 0 24px!important;line-height:1.85!important}
+.minimal-sticky .vditor-reset h1,.minimal-sticky .vditor-reset h2,.minimal-sticky .vditor-reset h3{color:var(--ink)}
+.minimal-sticky .vditor-reset blockquote{background:#e5eeeb80;border-radius:0}
+.minimal-sticky .vditor-reset code,.minimal-sticky .vditor-reset pre{background:#e8edeb90!important;color:#395950}
+.minimal-sticky .vditor .vditor-reset td{background:transparent!important}
+.minimal-sticky .vditor-reset th{background:#e5eeeb80}
+.minimal-sticky footer{padding:0;border-color:var(--line)}
+.minimal-sticky ::-webkit-scrollbar{width:6px}
+.minimal-sticky ::-webkit-scrollbar-track{background:transparent}
+.minimal-sticky ::-webkit-scrollbar-thumb{background:#98aaa5;border:0;border-radius:4px}

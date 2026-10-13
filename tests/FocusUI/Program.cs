@@ -82,6 +82,25 @@ class Program
   Check(Find<Grid>("DistributionBar").Visibility==Visibility.Collapsed&&(Visibility)soloRow.GetType().GetProperty("ShareVisibility")!.GetValue(soloRow)! == Visibility.Collapsed,"单任务只显示任务和时长，隐藏分配条与百分比");
   Check((string)soloRow.GetType().GetProperty("Time")!.GetValue(soloRow)! == "9 秒","单任务 9 秒记录正常保留");
   Save("focus-single.png",920);
+  soloService.Finish();
+  var note=new TaskNoteWindow(soloTask,soloRepo);var navigations=0;
+  note.AttachFocus(soloStore,soloService,_=>navigations++);
+  var noteBar=(FocusBar)note.FindName("NoteFocus");
+  var noteButtons=((Grid)noteBar.Child).Children.OfType<Button>().ToArray();
+  noteButtons[0].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  Check(soloService.Current is {State:FocusState.Running,Mode:FocusMode.Pomodoro}&&soloService.Current.TaskId==soloTask.Id&&navigations==0,"便签点击开始即启动当前任务，不跳转主窗口");
+  noteButtons[0].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  Check(soloService.Current!.State==FocusState.Paused,"便签可直接暂停计时");
+  noteButtons[0].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  Check(soloService.Current!.State==FocusState.Running,"便签可直接继续计时");
+  noteButtons[1].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  soloStore.SaveSettings(new FocusSettings(35,UseStopwatch:true));
+  noteButtons[0].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  Check(soloService.Current!.Mode==FocusMode.Stopwatch&&navigations==0,"便签遵循上次保存的正计时模式");
+  soloService.Finish();soloStore.SaveSettings(new FocusSettings(35));
+  noteButtons[0].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+  Check(soloService.Current!.PlannedMinutes==35,"便签遵循已保存的番茄钟时长");
+  note.Close();Check(soloService.Current!.State==FocusState.Running,"关闭便签不会停止已开始的计时");soloService.Finish();
   surface.RootVisual=null;Console.WriteLine($"专注界面：{checks} 项通过，未显示窗口。");
  }
 }

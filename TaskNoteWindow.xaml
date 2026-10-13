@@ -1,74 +1,107 @@
-<Window x:Class="Cdiary.TaskNoteWindow" x:Name="Root" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Cdiary"
-        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="任务便签" Icon="/Cdiary;component/Assets/Cdiary.ico" Width="340" Height="400" MinWidth="260" MinHeight="260"
-        WindowStartupLocation="Manual" WindowStyle="None" ResizeMode="CanResize"
-        ShowInTaskbar="True" Background="{DynamicResource WindowSurface}" FontFamily="Microsoft YaHei UI"
-        FontSize="14" Foreground="{DynamicResource TextInk}">
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="58" ResizeBorderThickness="6" GlassFrameThickness="0"/>
-    </shell:WindowChrome.WindowChrome>
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <local:LiveStyleDictionary/>
-            </ResourceDictionary.MergedDictionaries>
-
-        <Style TargetType="ScrollBar">
-            <Setter Property="Width" Value="16"/>
-            <Setter Property="Background" Value="#F0E8D8"/>
-            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
-                <Border Background="{TemplateBinding Background}" CornerRadius="6" Margin="1,0">
-                    <Track x:Name="PART_Track" Orientation="Vertical" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
-                           Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}"
-                           IsDirectionReversed="True" Margin="1">
-                        <Track.DecreaseRepeatButton>
-                            <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
-                        </Track.DecreaseRepeatButton>
-                        <Track.Thumb><Thumb>
-                            <Thumb.Template><ControlTemplate TargetType="Thumb">
-                                <Border Background="{DynamicResource Accent}" BorderBrush="#11A89B" BorderThickness="0,0,2,0" CornerRadius="7">
-                                    <Border Width="3" Margin="3,5,0,5" Background="#7EE4DB" CornerRadius="2" HorizontalAlignment="Left"/>
-                                </Border>
-                            </ControlTemplate></Thumb.Template></Thumb>
-                        </Track.Thumb>
-                        <Track.IncreaseRepeatButton>
-                            <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
-                        </Track.IncreaseRepeatButton>
-                    </Track>
-                </Border>
-            </ControlTemplate></Setter.Value></Setter>
-        </Style>
-        </ResourceDictionary>
-    </Window.Resources>
-    <Grid Margin="13,7,13,13" SizeChanged="Content_SizeChanged">
-        <Grid.RowDefinitions><RowDefinition Height="51"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Grid>
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="32" Height="32" CornerRadius="11" Background="{DynamicResource Accent}" Margin="0,0,9,0">
-                    <TextBlock Text="✿" Foreground="White" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="任务便签" Style="{DynamicResource NoteTitle}"/>
-                    <TextBlock Text="随手记，随时看" FontSize="10" Foreground="{DynamicResource Muted}"/>
-                </StackPanel>
-            </StackPanel>
-            <ToggleButton x:Name="PinToggle" Grid.Column="1" Style="{DynamicResource PinToggle}" Margin="0,0,7,0"
-                          IsChecked="{Binding Topmost, ElementName=Root, Mode=TwoWay}"
-                          shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-            <Button Grid.Column="2" Content="×" Style="{DynamicResource NoteCloseButton}"
-
-                    Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-        </Grid>
-        <Border Grid.Row="1" Height="1" Background="#DED2BC" Margin="0,0,0,12"/>
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <TextBox x:Name="TitleEditor" Grid.Row="0" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{DynamicResource NoteInput}" FontWeight="Bold" Margin="0,0,0,10" ToolTip="任务名称"
-                     TextWrapping="Wrap" MaxHeight="72" VerticalScrollBarVisibility="Auto"/>
-            <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><local:FocusBar x:Name="NoteFocus" Visibility="Collapsed"/><local:MarkdownNoteView x:Name="NoteEditor" Grid.Row="1" Task="{Binding}"/></Grid>
-            <TextBlock x:Name="SaveHint" Grid.Row="2" Text="自动保存 · 拖动顶部可移动" Foreground="{DynamicResource Muted}" FontSize="10" Margin="3,9,0,0"/>
-        </Grid>
-    </Grid>
+﻿<Window x:Class="Cdiary.TaskNoteWindow" x:Name="Root" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Cdiary"
+ xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+ Title="任务便签" Icon="/Cdiary;component/Assets/Cdiary.ico" Width="380" Height="480" MinWidth="280" MinHeight="280"
+ WindowStartupLocation="Manual" WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize"
+ ShowInTaskbar="True" Background="Transparent" FontFamily="Microsoft YaHei UI" FontSize="14" Foreground="#303A3D">
+ <shell:WindowChrome.WindowChrome><shell:WindowChrome CaptionHeight="42" ResizeBorderThickness="6" GlassFrameThickness="0"/></shell:WindowChrome.WindowChrome>
+ <Window.Resources><ResourceDictionary>
+  <ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries>
+  <SolidColorBrush x:Key="TextInk" Color="#303A3D"/><SolidColorBrush x:Key="Muted" Color="#737F82"/>
+  <Style x:Key="QuietButton" TargetType="Button">
+   <Setter Property="Foreground" Value="#526266"/><Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Padding" Value="9,5"/><Setter Property="FontSize" Value="12"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="Plate" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Plate" Property="Background" Value="#DFEEEB"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="Plate" Property="Background" Value="#C7E4DE"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Plate" Property="BorderBrush" Value="#438F83"/><Setter TargetName="Plate" Property="BorderThickness" Value="1"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".45"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="Pill" TargetType="Button" BasedOn="{StaticResource QuietButton}"/>
+  <Geometry x:Key="PinLine">M 9,3 L 16,10 M 10,4 L 6,8 L 6,12 L 10,12 L 14,8 M 6,12 L 2,16</Geometry>
+  <Geometry x:Key="PinWindows">M 6,13 L 3,13 L 3,3 L 13,3 L 13,6 M 7,7 L 17,7 L 17,17 L 7,17 Z M 7,10 L 17,10</Geometry>
+  <Geometry x:Key="PinTop">M 3,3 L 17,3 M 10,17 L 10,7 M 5,12 L 10,7 L 15,12</Geometry>
+  <Style x:Key="MinimalPin" TargetType="ToggleButton">
+   <Setter Property="Width" Value="30"/><Setter Property="Height" Value="30"/><Setter Property="Foreground" Value="#737F82"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="ToolTip" Value="置顶便签"/><Setter Property="AutomationProperties.Name" Value="置顶便签"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ToggleButton">
+    <Border x:Name="Plate" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5">
+     <Grid><Path Data="{TemplateBinding Tag}" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <Ellipse x:Name="Indicator" Width="3" Height="3" Fill="{TemplateBinding Foreground}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,1" Visibility="Collapsed"/>
+     </Grid>
+    </Border><ControlTemplate.Triggers>
+     <Trigger Property="IsChecked" Value="True"><Setter Property="Foreground" Value="#287D70"/><Setter TargetName="Indicator" Property="Visibility" Value="Visible"/><Setter Property="ToolTip" Value="取消置顶"/><Setter Property="AutomationProperties.Name" Value="取消置顶"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Plate" Property="Background" Value="#18737F82"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="Plate" Property="Background" Value="#28737F82"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Plate" Property="BorderBrush" Value="#438F83"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="PinChoice" TargetType="RadioButton">
+   <Setter Property="Foreground" Value="#526266"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="0,0,5,0"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+    <Border x:Name="Plate" Background="Transparent" BorderBrush="#CFD9D6" BorderThickness="1" CornerRadius="6" Padding="5,7"><ContentPresenter/></Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsChecked" Value="True"><Setter TargetName="Plate" Property="BorderBrush" Value="#438F83"/><Setter TargetName="Plate" Property="Background" Value="#DFEEEB"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Plate" Property="Background" Value="#E9EFED"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Plate" Property="BorderBrush" Value="#303A3D"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+ </ResourceDictionary></Window.Resources>
+ <Grid>
+  <Border x:Name="BackgroundLayer" CornerRadius="12" Background="#F7F9F8" IsHitTestVisible="False">
+   <Border x:Name="PictureLayer" CornerRadius="12"/>
+  </Border>
+  <Border BorderBrush="#30737F82" BorderThickness="1" CornerRadius="12" IsHitTestVisible="False"/>
+  <Grid Margin="16,5,16,10" SizeChanged="Content_SizeChanged">
+   <Grid.RowDefinitions><RowDefinition Height="36"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <TextBlock Text="任务便签" FontSize="11" Foreground="#737F82" VerticalAlignment="Center"/>
+     <Button Content="⋯" Style="{StaticResource QuietButton}" Padding="7,0" ToolTip="日期与推进、今天先到这里" Click="Planning_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+    </StackPanel>
+    <Button x:Name="AppearanceButton" Grid.Column="1" Content="外观" Style="{StaticResource QuietButton}" Click="Appearance_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+    <ToggleButton x:Name="PinToggle" Grid.Column="2" Style="{StaticResource MinimalPin}" Tag="{StaticResource PinLine}" Margin="4,0" IsChecked="{Binding Topmost, ElementName=Root, Mode=TwoWay}" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+    <Button Grid.Column="3" Content="×" FontSize="19" Width="28" Padding="0" Style="{StaticResource QuietButton}" ToolTip="关闭便签" Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+   </Grid>
+   <TextBox x:Name="TitleEditor" Grid.Row="1" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="19" FontWeight="SemiBold" Foreground="#303A3D" Background="Transparent" BorderThickness="0" Padding="0,6,0,8" Margin="0,0,0,6" ToolTip="任务名称" TextWrapping="Wrap" MaxHeight="72" VerticalScrollBarVisibility="Auto"/>
+   <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <local:FocusBar x:Name="NoteFocus" Visibility="Collapsed" Background="Transparent" Padding="0,2,0,7"/>
+    <local:MarkdownNoteView x:Name="NoteEditor" Grid.Row="1" Task="{Binding}"/>
+   </Grid>
+   <TextBlock x:Name="SaveHint" Grid.Row="3" Text="自动保存" Foreground="#737F82" FontSize="10" Margin="0,7,0,0"/>
+  </Grid>
+  <Popup x:Name="AppearancePopup" PlacementTarget="{Binding ElementName=AppearanceButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
+   <Border Background="#F7F9F8" BorderBrush="#CFD9D6" BorderThickness="1" CornerRadius="10" Padding="16" Width="260">
+    <StackPanel>
+     <TextBlock Text="便签外观" FontWeight="SemiBold" Foreground="#303A3D" Margin="0,0,0,12"/>
+     <TextBlock Text="置顶图标" FontSize="12" Margin="0,0,0,7"/>
+     <UniformGrid Columns="3" Margin="0,0,0,12">
+      <RadioButton x:Name="PinLineChoice" GroupName="PinStyle" Tag="0" Style="{StaticResource PinChoice}" Checked="PinStyle_Checked" AutomationProperties.Name="细线图钉">
+       <StackPanel><Path Data="{StaticResource PinLine}" Stroke="#526266" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="20" Height="20"/><TextBlock Text="细线图钉" FontSize="10" HorizontalAlignment="Center" Margin="0,5,0,0"/></StackPanel>
+      </RadioButton>
+      <RadioButton x:Name="PinWindowsChoice" GroupName="PinStyle" Tag="1" Style="{StaticResource PinChoice}" Checked="PinStyle_Checked" AutomationProperties.Name="叠窗置顶">
+       <StackPanel><Path Data="{StaticResource PinWindows}" Stroke="#526266" StrokeThickness="1.4" StrokeLineJoin="Round" Width="20" Height="20"/><TextBlock Text="叠窗置顶" FontSize="10" HorizontalAlignment="Center" Margin="0,5,0,0"/></StackPanel>
+      </RadioButton>
+      <RadioButton x:Name="PinTopChoice" GroupName="PinStyle" Tag="2" Style="{StaticResource PinChoice}" Checked="PinStyle_Checked" AutomationProperties.Name="顶线箭头">
+       <StackPanel><Path Data="{StaticResource PinTop}" Stroke="#526266" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="20" Height="20"/><TextBlock Text="顶线箭头" FontSize="10" HorizontalAlignment="Center" Margin="0,5,0,0"/></StackPanel>
+      </RadioButton>
+     </UniformGrid>
+     <StackPanel Orientation="Horizontal"><Button Content="选择背景图片…" Style="{StaticResource QuietButton}" Click="ChooseBackground_Click"/><Button Content="移除" Style="{StaticResource QuietButton}" Click="RemoveBackground_Click"/></StackPanel>
+     <TextBlock Text="背景不透明度" Margin="0,14,0,4" FontSize="12"/>
+     <DockPanel><TextBlock x:Name="OpacityLabel" DockPanel.Dock="Right" Width="38" TextAlignment="Right" FontSize="11"/><Slider x:Name="BackgroundOpacitySlider" Minimum="10" Maximum="100" Value="96" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="Appearance_ValueChanged"/></DockPanel>
+     <TextBlock Text="图片浓度" Margin="0,12,0,4" FontSize="12"/>
+     <DockPanel><TextBlock x:Name="ImageLabel" DockPanel.Dock="Right" Width="38" TextAlignment="Right" FontSize="11"/><Slider x:Name="ImageStrengthSlider" Minimum="0" Maximum="100" Value="30" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="Appearance_ValueChanged"/></DockPanel>
+     <TextBlock Text="仅改变背景，文字保持清晰。&#10;外观设置应用于所有任务便签。" FontSize="11" Foreground="#737F82" Margin="0,12,0,0"/>
+     <TextBlock x:Name="AppearanceNotice" TextWrapping="Wrap" Foreground="#A44343" FontSize="11" Margin="0,6,0,0"/>
+    </StackPanel>
+   </Border>
+  </Popup>
+ </Grid>
 </Window>

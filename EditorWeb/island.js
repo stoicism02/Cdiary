@@ -416,6 +416,7 @@
     get readOnly(){return readOnly}, get ready(){return ready}, get composing(){return composing},
     receive(data) {
       if (data.kind === 'load') load(data);
+      else if (data.kind === 'minimalSticky') document.documentElement.classList.add('minimal-sticky');
       else if (data.kind === 'outlineEnabled') enableOutline(data.enabled);
       else if (data.kind === 'outlineJump') jumpOutline(data);
       else if (data.kind === 'imageResult') imageResult(data);
@@ -445,6 +446,7 @@
     input:()=>{if(session?.dirty) flush()},
     after:()=>{
       ready=true;
+      editor.vditor.wysiwyg.popover.classList.add('island-block-popover');
       const imageObserver=new MutationObserver(()=>{
         editor.vditor.wysiwyg.element.querySelectorAll('img').forEach(img=>{img.loading='lazy';img.decoding='async';img.title='双击查看原图';});
         scheduleOutline();

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
@@ -16,20 +16,24 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
 {
     private readonly Action<DiaryTask> _openTaskNote;
     private readonly Action<DiaryTask> _saveCompletion;
+    private readonly DiaryRepository? _repository;
+    private readonly HashSet<DiaryTask> _observed = new();
 
     public DailyTodoWindow(DateTime date, ObservableCollection<DiaryTask> tasks,
-        Action<DiaryTask> openTaskNote, Action<DiaryTask> saveCompletion)
+        Action<DiaryTask> openTaskNote, Action<DiaryTask> saveCompletion, DiaryRepository? repository = null)
     {
+        _repository = repository;
         Date = date.Date;
         Tasks = tasks;
         _openTaskNote = openTaskNote;
         _saveCompletion = saveCompletion;
         InitializeComponent();
-        ActiveTasks = CollectionViewSource.GetDefaultView(Tasks);
-        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false };
+        ActiveTasks = new ListCollectionView(Tasks);
+        ActiveTasks.Filter = item => item is DiaryTask { IsDone: false } task && !task.IsShelvedOn(Date);
         DataContext = this;
         Tasks.CollectionChanged += TasksChanged;
-        foreach (var task in Tasks) task.PropertyChanged += TaskChanged;
+        ObserveTasks();
+        RefreshPlanning();
         Title = $"{DayLabel}待办 · 小岛日记";
     }
 
@@ -39,26 +43,40 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
     public ICollectionView ActiveTasks { get; }
     public string DayLabel => Date.ToString("M月d日 dddd", CultureInfo.GetCultureInfo("zh-CN"));
     public string ProgressLabel => $"已完成 {Tasks.Count(task => task.IsDone)} / {Tasks.Count}";
-    public bool HasTasks => Tasks.Any(task => !task.IsDone);
+    public bool HasTasks => Tasks.Any(task => !task.IsDone && !task.IsShelvedOn(Date));
 
-    private void TasksChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    public ObservableCollection<DiaryTask> ShelvedTasks { get; } = new();
+    public bool HasShelvedTasks => ShelvedTasks.Count > 0;
+    public string ShelvedLabel => $"{(Date == DateTime.Today ? "今日" : "当日")}已推进 · {ShelvedTasks.Count}";
+    public bool IsToday => Date == DateTime.Today;
+    private void ObserveTasks()
     {
-        if (e.OldItems is not null)
-            foreach (DiaryTask task in e.OldItems) task.PropertyChanged -= TaskChanged;
-        if (e.NewItems is not null)
-            foreach (DiaryTask task in e.NewItems) task.PropertyChanged += TaskChanged;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressLabel)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasTasks)));
+        foreach (var old in _observed.Where(t => !Tasks.Contains(t)).ToArray()) { old.PropertyChanged -= TaskChanged; _observed.Remove(old); }
+        foreach (var task in Tasks) if (_observed.Add(task)) task.PropertyChanged += TaskChanged;
     }
-
+    private void TasksChanged(object? sender, NotifyCollectionChangedEventArgs e) { ObserveTasks(); RefreshPlanning(); }
+    public void RefreshPlanning()
+    {
+        ActiveTasks.Refresh(); ShelvedTasks.Clear();
+        foreach (var task in Tasks.Where(t => !t.IsDone && t.IsShelvedOn(Date))) ShelvedTasks.Add(task);
+        foreach (var name in new[] { nameof(ProgressLabel), nameof(HasTasks), nameof(HasShelvedTasks), nameof(ShelvedLabel), nameof(IsToday) })
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
     private void TaskChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(DiaryTask.IsDone))
-        {
-            ActiveTasks.Refresh();
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressLabel)));
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasTasks)));
-        }
+        if (e.PropertyName is nameof(DiaryTask.IsDone) or nameof(DiaryTask.IsShelvedOn)) RefreshPlanning();
+    }
+    private void Planning_Click(object sender, RoutedEventArgs e)
+    {
+        if (_repository is null || sender is not System.Windows.Controls.Button { DataContext: DiaryTask task } button) return;
+        var menu = TaskPlanningMenu.Create(this, task, _repository, () => System.Threading.Tasks.Task.CompletedTask, Date);
+        menu.PlacementTarget = button; menu.IsOpen = true; e.Handled = true;
+    }
+    private void Continue_Click(object sender, RoutedEventArgs e)
+    {
+        if (_repository is null || sender is not System.Windows.Controls.Button { DataContext: DiaryTask task }) return;
+        try { _repository.SetDayShelved(task, Date, false); }
+        catch (Exception error) { System.Windows.MessageBox.Show(this, error.Message, "小岛日记"); }
     }
 
     private void TaskCheck_Click(object sender, RoutedEventArgs e)
@@ -82,7 +100,7 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
                  ? VisualTreeHelper.GetParent(current)
                  : LogicalTreeHelper.GetParent(current))
         {
-            if (current is WpfCheckBox) return;
+            if (current is System.Windows.Controls.Primitives.ButtonBase) return;
             if (current is ListBoxItem { DataContext: DiaryTask task })
             {
                 _openTaskNote(task);
@@ -94,7 +112,8 @@ public partial class DailyTodoWindow : Window, INotifyPropertyChanged
     protected override void OnClosing(CancelEventArgs e)
     {
         Tasks.CollectionChanged -= TasksChanged;
-        foreach (var task in Tasks) task.PropertyChanged -= TaskChanged;
+        foreach (var task in _observed) task.PropertyChanged -= TaskChanged;
+        _observed.Clear();
         base.OnClosing(e);
     }
 

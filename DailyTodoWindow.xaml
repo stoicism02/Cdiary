@@ -83,7 +83,7 @@
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="14,7,14,13">
-        <Grid.RowDefinitions><RowDefinition Height="52"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="52"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <Grid VerticalAlignment="Center">
@@ -123,7 +123,7 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <CheckBox IsChecked="{Binding IsDone, Mode=TwoWay}" Style="{StaticResource TodoCheck}"
                               VerticalAlignment="Center" Click="TaskCheck_Click"/>
-                    <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center"
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" Margin="0,0,8,0">
                         <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers>
                             <DataTrigger Binding="{Binding IsDone}" Value="True">
@@ -132,11 +132,14 @@
                             </DataTrigger>
                         </Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
-                    <TextBlock Grid.Column="2" Text="{Binding ReminderLabel}" Foreground="{DynamicResource Muted}"
-                               FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding PlanLabel}" FontSize="10" TextTrimming="CharacterEllipsis">
+                            <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Muted}"/><Style.Triggers><DataTrigger Binding="{Binding IsOverdue}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DangerInk}"/></DataTrigger><DataTrigger Binding="{Binding PlanLabel}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="⋯" Style="{DynamicResource Pill}" Padding="5,1" VerticalAlignment="Center" Click="Planning_Click" ToolTip="日期与推进、今天先到这里"/>
                 </Grid></DataTemplate></ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock Text="今天的待办已清空&#10;完成的任务可在主界面查看" TextAlignment="Center"
+                <TextBlock Text="今天的待办已清空&#10;已收起的任务在下方，完成记录在主界面" TextAlignment="Center"
                            Foreground="{DynamicResource Muted}" FontSize="12" LineHeight="22"
                            HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
@@ -147,7 +150,16 @@
                 </TextBlock>
             </Grid>
         </Border>
-        <TextBlock Grid.Row="3" Text="勾选完成 · 双击任务写笔记" Foreground="{DynamicResource Muted}"
+        <Expander Grid.Row="3" Header="{Binding ShelvedLabel}" FontSize="11" Margin="3,7,0,0">
+            <Expander.Style><Style TargetType="Expander"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasShelvedTasks}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Expander.Style>
+            <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding ShelvedTasks}"><ItemsControl.ItemTemplate><DataTemplate>
+                <Grid Margin="4,5"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="继续处理" Style="{DynamicResource Pill}" FontSize="10" Padding="8,3" Click="Continue_Click" IsEnabled="{Binding IsToday, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </Grid>
+            </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+        </Expander>
+        <TextBlock Grid.Row="4" Text="勾选完成 · 双击任务写笔记" Foreground="{DynamicResource Muted}"
                    FontSize="10" Margin="3,10,0,0"/>
     </Grid>
 </Window>

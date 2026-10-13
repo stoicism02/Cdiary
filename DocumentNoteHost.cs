@@ -16,8 +16,10 @@ public sealed partial class DocumentNoteHost : Grid, IDisposable
 {
     private const string Origin = "https://island-editor.local";
     private static Task<CoreWebView2Environment>? _environment;
+    private static Task<CoreWebView2Environment>? _compositionEnvironment;
+    private readonly bool _transparent;
     private static int _activeViews;
-    private readonly WebView2 _web = new() { DefaultBackgroundColor = System.Drawing.Color.FromArgb(255, 255, 251, 234) };
+    private readonly IWebView2 _web;
     private readonly Dictionary<string, DiaryTask> _sessions = new();
     private readonly Dictionary<long, DiaryTask> _dirty = new();
     private readonly Dictionary<long, string> _originals = new();
@@ -36,9 +38,13 @@ public sealed partial class DocumentNoteHost : Grid, IDisposable
     public event Action<string>? Notice;
     public event Action? Ready;
 
-    public DocumentNoteHost()
+    public DocumentNoteHost(bool transparent = false)
     {
-        Children.Add(_web);
+        _transparent = transparent;
+        _web = transparent
+            ? new WebView2CompositionControl { DefaultBackgroundColor = System.Drawing.Color.Transparent }
+            : new WebView2 { DefaultBackgroundColor = System.Drawing.Color.FromArgb(255, 255, 251, 234) };
+        Children.Add((UIElement)_web);
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _saveTimer.Tick += (_, _) => SavePending();
         IsVisibleChanged += async (_, _) =>
@@ -79,8 +85,10 @@ public sealed partial class DocumentNoteHost : Grid, IDisposable
             if (!File.Exists(Path.Combine(folder, "index.html"))) throw new FileNotFoundException("未找到本地编辑器资源。");
             var dataFolder = Repository is not null ? Path.GetDirectoryName(Repository.DatabasePath)!
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Cdiary");
-            _environment ??= CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(dataFolder, "EditorRuntime"));
-            await _web.EnsureCoreWebView2Async(await _environment);
+            var environment = _transparent
+                ? (_compositionEnvironment ??= CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(dataFolder, "EditorRuntimeComposition")))
+                : (_environment ??= CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(dataFolder, "EditorRuntime")));
+            await _web.EnsureCoreWebView2Async(await environment);
             if (_disposed) throw new ObjectDisposedException(nameof(DocumentNoteHost));
             _initialized = true; _activeViews++;
             var core = _web.CoreWebView2;
@@ -250,6 +258,6 @@ public sealed partial class DocumentNoteHost : Grid, IDisposable
         _presentationReady?.TrySetResult();
         if (_task is not null) _task.PropertyChanged -= TaskChanged;
         _sessions.Clear(); _web.Dispose();
-        if (_initialized && --_activeViews == 0) _environment = null;
+        if (_initialized && --_activeViews == 0) { _environment = null; _compositionEnvironment = null; }
     }
 }
