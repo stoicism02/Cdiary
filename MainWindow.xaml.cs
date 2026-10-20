@@ -39,8 +39,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private DateTime _calendarMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime _calendarSelectedDate = DateTime.Today;
     private DateTime _knownToday = DateTime.Today;
-    private bool _overdueExpanded = true;
-    private bool _overdueManuallyToggled;
+    private bool _overdueExpanded;
     private WindowLayoutMode _layoutMode = WindowLayoutMode.Standard;
     private bool _hasResponsiveLayout;
     private bool _compactDetails;
@@ -55,6 +54,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _repository = repository;
         _scheduler = scheduler;
         InitializeComponent();
+        InitializeWorkspaceFeedback();
+        // Only this read-only instance receives the workspace theme. The same control in
+        // TaskNoteWindow keeps its original resources and WebView2 presentation.
+        TaskNoteEditor.Resources.MergedDictionaries.Add(new ResourceDictionary
+        { Source = new Uri("/Cdiary;component/Styles/LightIsland.xaml", UriKind.Relative) });
+        TaskNoteEditor.Resources["PaperSurface"] = FindResource("WindowSurface");
+        if (TaskNoteEditor.FindName("PreviewFrame") is Border previewFrame)
+        { previewFrame.CornerRadius = new CornerRadius(0); previewFrame.BorderThickness = new Thickness(0); }
+        if (TaskNoteEditor.FindName("Preview") is FlowDocumentScrollViewer readingView)
+        { readingView.BorderThickness = new Thickness(0); readingView.Background = System.Windows.Media.Brushes.Transparent; }
         InitializeFocus(focusStore, focus);
         TaskNoteEditor.DocumentRepository = repository;
         ScreenshotGallery.SettingsRequested += ShowSettingsPage;
@@ -307,6 +316,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ShowHomePage();
         OpenDate(date);
+        MemoExpander.IsExpanded = true;
         DayMemoBox.Focus();
     }
 
@@ -384,7 +394,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var visibleStart = first.AddDays(-(int)first.DayOfWeek);
         var daysNeeded = (int)first.DayOfWeek + DateTime.DaysInMonth(first.Year, first.Month);
         var cellCount = Math.Max(35, ((daysNeeded + 6) / 7) * 7);
-        _calendarVisibleLimit = Math.Max(1, (int)((Math.Max(470, CalendarGrid.ActualHeight) / (cellCount / 7) - 43) / 22));
+        _calendarVisibleLimit = Math.Max(1, (int)((Math.Max(280, CalendarGrid.ActualHeight) / (cellCount / 7) - 43) / 22));
         var entries = _repository.LoadCalendarEntries(visibleStart, visibleStart.AddDays(cellCount))
             .GroupBy(entry => entry.Date).ToDictionary(group => group.Key, group => (IReadOnlyList<CalendarEntry>)group.ToList());
         CalendarDays.Clear();
@@ -438,6 +448,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Changed(nameof(ProgressLabel));
             if (e.PropertyName == nameof(DiaryTask.IsDone))
             {
+                if (task.IsDone && HomePage.Visibility == Visibility.Visible) ShowCompletionNotice(task);
                 PlanningChanged();
                 if (task.IsDone && OverdueTasks.Remove(task))
                 {
@@ -521,7 +532,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
     private void OverdueToggle_Click(object sender, RoutedEventArgs e)
     {
-        _overdueManuallyToggled = true;
         _overdueExpanded = !_overdueExpanded;
         UpdateOverdueSection();
     }
@@ -529,12 +539,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HomePage_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (e.NewSize.Height <= 0) return;
-        MemoRow.Height = new GridLength(Math.Clamp((e.NewSize.Height - DateToolbar.ActualHeight) * 0.24, 110, 210));
-        if (_overdueManuallyToggled) return;
-        var expanded = e.NewSize.Height >= 520;
-        if (_overdueExpanded == expanded) return;
-        _overdueExpanded = expanded;
-        UpdateOverdueSection();
+        MemoRow.Height = GridLength.Auto;
     }
 
     private void LayoutRoot_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -546,24 +551,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             if (mode == WindowLayoutMode.Compact && TaskNotePanel.IsKeyboardFocusWithin) _compactDetails = true;
             _layoutMode = mode; _hasResponsiveLayout = true;
-            var wide = mode == WindowLayoutMode.Wide;
-            DateColumn.Width = new GridLength(wide ? 180 : 0);
-            DateGap.Width = new GridLength(wide ? 12 : 0);
+            DateColumn.Width = new GridLength(0);
+            DateGap.Width = new GridLength(0);
             TaskColumn.Width = new GridLength(mode == WindowLayoutMode.Compact ? 1 : 1.2, GridUnitType.Star);
-            NoteGap.Width = new GridLength(mode == WindowLayoutMode.Compact ? 0 : 12);
+            NoteGap.Width = new GridLength(mode == WindowLayoutMode.Compact ? 0 : 24);
             NoteColumn.Width = mode == WindowLayoutMode.Compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-            DateToolbar.Visibility = wide ? Visibility.Collapsed : Visibility.Visible;
-            DateRail.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
-            TaskDateSubtitle.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+            DateToolbar.Visibility = Visibility.Visible;
+            DateRail.Visibility = Visibility.Collapsed;
+            TaskDateSubtitle.Visibility = Visibility.Collapsed;
+            NavigationColumn.Width = new GridLength(mode == WindowLayoutMode.Compact ? 112 : 148);
+            SettingsNavigation.Visibility = mode == WindowLayoutMode.Compact ? Visibility.Collapsed : Visibility.Visible;
             EnvironmentStatus.Visibility = mode == WindowLayoutMode.Compact ? Visibility.Collapsed : Visibility.Visible;
             ApplyHomeVisibility();
         }
-        HeaderRow.Height = new GridLength(shortWindow ? 64 : 74);
-        System.Windows.Shell.WindowChrome.GetWindowChrome(this).CaptionHeight = (shortWindow ? 64 : 74) + LayoutRoot.Margin.Top;
-        BrandSubtitle.Visibility = shortWindow ? Visibility.Collapsed : Visibility.Visible;
+        HeaderRow.Height = new GridLength(56);
+        System.Windows.Shell.WindowChrome.GetWindowChrome(this).CaptionHeight = 56;
+        BrandSubtitle.Visibility = Visibility.Collapsed;
         NoteSubtitle.Visibility = shortWindow ? Visibility.Collapsed : Visibility.Visible;
-        TasksCard.Padding = TaskNotePanel.Padding = new Thickness(shortWindow ? 16 : _layoutMode == WindowLayoutMode.Wide ? 24 : 20);
-        TaskDivider.Margin = NoteDivider.Margin = new Thickness(0, shortWindow ? 8 : 15, 0, shortWindow ? 8 : 15);
+        TasksCard.Padding = new Thickness(0);
+        TaskNotePanel.Padding = new Thickness(_layoutMode == WindowLayoutMode.Compact ? 0 : 20, 0, 0, 0);
+        TaskNotePanel.BorderThickness = new Thickness(_layoutMode == WindowLayoutMode.Compact ? 0 : 1, 0, 0, 0);
+        NoteDivider.Margin = new Thickness(0, 10, 0, 10);
+        // Collapse by default when entering a short window, while allowing explicit expansion.
+        if (shortWindow && e.PreviousSize.Height >= 650) MemoExpander.IsExpanded = false;
+        if (shortWindow && e.PreviousSize.Height == 0) MemoExpander.IsExpanded = false;
     }
 
     private void ApplyHomeVisibility()
@@ -842,7 +853,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Changed(nameof(EmptyTaskMessage));
     }
 
-    private void TaskCheck_Click(object sender, RoutedEventArgs e) => Changed(nameof(ProgressLabel));
+    private void TaskCheck_Click(object sender, RoutedEventArgs e)
+    {
+        Changed(nameof(ProgressLabel));
+    }
 
     private void OpenDay_Click(object sender, RoutedEventArgs e)
     {

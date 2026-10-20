@@ -43,7 +43,8 @@ repository.SaveRule(first, true, (1 << (int)today.DayOfWeek) | (1 << (int)today.
 repository.SaveDayMemo(today, "今天慢慢来，先做好眼前的事。");
 
 var scheduler = new ReminderScheduler(repository, Dispatcher.CurrentDispatcher, _ => { });
-var window = new MainWindow(repository, scheduler);
+var focusStore = new FocusStore(repository);
+var window = new MainWindow(repository, scheduler, focusStore: focusStore, focus: new FocusService(focusStore));
 var root = (FrameworkElement)window.Content;
 
 var note = new TaskNoteWindow(first, repository);
@@ -134,6 +135,7 @@ Render(minutePreview, Path.Combine(output, "preview-repeat-minute-options.png"),
 
 static void Render(FrameworkElement root, string path, int width = 1100, int height = 720)
 {
+    PrepareReadOnlyNotes(root);
     root.Measure(new Size(width, height));
     root.Arrange(new Rect(0, 0, width, height));
     root.UpdateLayout();
@@ -153,6 +155,13 @@ static void Render(FrameworkElement root, string path, int width = 1100, int hei
     using var stream = File.Create(path);
     encoder.Save(stream);
     Console.WriteLine(path);
+}
+static void PrepareReadOnlyNotes(DependencyObject root)
+{
+    // RenderTargetBitmap does not raise Loaded; mirror the read-only mode that Loaded
+    // selects in a real main window, without starting a WebView2 editor.
+    if (root is MarkdownNoteView { DisplayOnly: true } note) { note.SetMode(NoteViewMode.Preview); note.RenderPreview(); }
+    for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) PrepareReadOnlyNotes(VisualTreeHelper.GetChild(root, i));
 }
 static Button? FindCalendarMore(DependencyObject root)
 {

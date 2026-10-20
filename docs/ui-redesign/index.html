@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小岛日记 · UI 设计评审</title><link rel="stylesheet" href="review.css"></head>
+<body>
+ <header class="review-head"><div><strong>小岛日记 / 设计评审</strong><span>2026.10.13 · 方案原型，未实施</span></div><a href="00-current-audit.md">审计报告</a><button id="evidence-toggle">现状证据</button></header>
+ <section class="direction-picker" aria-label="设计方向"><button data-direction="a"><b>A · 轻岛</b><span>功能侧栏 / 清单与阅读</span></button><button data-direction="b"><b>B · 纸页</b><span>日期索引 / 连续日页</span></button><button data-direction="c"><b>C · 专注台</b><span>顶部工作区 / 常驻专注</span></button></section>
+ <div class="review-caption"><p id="concept-summary"></p><a id="spec-link">阅读完整方案</a><button id="sticky-demo">现有任务便签 · 保留</button></div>
+ <main id="app" aria-label="方案交互原型"></main>
+ <section id="evidence" hidden><header><h1>当前版本的控件渲染</h1><p>来自当前 WPF 源码与独立示例数据。这里是截图画廊，不是浏览器中的原生软件。以下图片均非重设计效果。</p></header><div id="evidence-grid"></div><p>主窗口预览工具未注入专注服务，因此部分图中没有专注导航；独立专注图与便签编辑器图使用对应真实控件。详见来源清单与审计报告。</p><a href="evidence/manifest.json">查看来源清单</a></section>
+ <div id="toast" role="status" aria-live="polite" hidden></div>
+ <footer class="review-footer">示例交互仅保存在当前页面内存中。点任务看预览，点 ⋯ 体验今日收起，点“在便签中编辑”查看编辑设计。<a href="04-comparison-and-architecture.md">方案比较与实施边界</a></footer>
+ <script src="review.js"></script>
+</body></html>

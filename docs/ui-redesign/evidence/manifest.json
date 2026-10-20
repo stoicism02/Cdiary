@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-13",
+  "commit": "e96f50e7faf4b181ba1b3b695a3f0f711b80210d",
+  "method": "Current WPF controls rendered with isolated sample databases; no production data. sticky-live includes a real offscreen WebView2 editor. Browser gallery displays these captures, it is not the native app.",
+  "limitations": [
+    "Preview harness omits FocusStore and therefore hides FocusTab in main-window images. The standalone focus capture uses the actual FocusPage.",
+    "Native layout images do not establish accessibility, interactive latency, multiple-monitor placement or high-DPI correctness.",
+    "sticky-live uses a generated test background, contains test typing and captures a transient saving label.",
+    "Preview harness examples vary between captures; counts are illustrative, not production user data."
+  ],
+  "files": {
+    "home-standard.png": "build-check/ui-redesign-current/preview-home.png",
+    "home-wide.png": "build-check/ui-redesign-current/preview-home-wide.png",
+    "home-compact.png": "build-check/ui-redesign-current/preview-home-compact.png",
+    "home-detail.png": "build-check/ui-redesign-current/preview-home-detail.png",
+    "calendar-standard.png": "build-check/ui-redesign-current/preview-calendar.png",
+    "calendar-compact.png": "build-check/ui-redesign-current/preview-calendar-current-small.png",
+    "search.png": "build-check/ui-redesign-current/preview-search.png",
+    "completed.png": "build-check/ui-redesign-current/preview-completed.png",
+    "daily-small.png": "build-check/ui-redesign-current/preview-daily-small.png",
+    "sticky-live.png": "build-check/minimal-sticky.png",
+    "focus.png": "tests/FocusUI/bin/Release/net10.0-windows10.0.17763.0/preview/focus-wide.png",
+    "settings.png": "build-check/ui-redesign-screenshots/screenshots-settings.png",
+    "screenshots.png": "build-check/ui-redesign-screenshots/screenshots-gallery.png"
+  }
+}

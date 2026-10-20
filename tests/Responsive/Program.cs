@@ -26,6 +26,12 @@ internal static class Program
         }
         bool Visible(string name) => Find<UIElement>(name).Visibility == Visibility.Visible;
         Layout(1100);
+        Check(((SolidColorBrush)window.FindResource("WindowSurface")).Color == (Color)ColorConverter.ConvertFromString("#F2F7F5"),
+              "主窗口使用轻岛底色");
+        var unchangedSticky = new TaskNoteWindow(task, repository);
+        Check(((SolidColorBrush)unchangedSticky.FindResource("Accent")).Color == (Color)ColorConverter.ConvertFromString("#19C8B9")
+              && !ReferenceEquals(window.FindResource("Pill"), unchangedSticky.FindResource("Pill")),
+              "任务便签保留原有资源与按钮模板，不继承主窗口主题");
         Check(window.CurrentLayoutMode == WindowLayoutMode.Standard && Visible("DateToolbar") && !Visible("DateRail")
               && Visible("TaskContent") && Visible("TaskNotePanel"), "标准窗口为日期顶栏与双栏内容");
         var selected = window.SelectedTask;
@@ -33,9 +39,12 @@ internal static class Program
         editor.Text = "尚在编辑的笔记\n第二行"; editor.CaretIndex = 5;
         Find<TextBox>("ReminderBox").Text = "09:35";
         Layout(1500, 900);
-        Check(window.CurrentLayoutMode == WindowLayoutMode.Wide && Visible("DateRail") && !Visible("DateToolbar"), "宽屏展开独立日期栏");
+        Check(window.CurrentLayoutMode == WindowLayoutMode.Wide && !Visible("DateRail") && Visible("DateToolbar"), "宽屏保持水平日期栏，阅读空间不被日期柱占用");
         Layout(760, 580);
         Check(window.CurrentLayoutMode == WindowLayoutMode.Compact && Visible("TaskContent") && !Visible("TaskNotePanel"), "窄屏先展示待办与备忘");
+        Check(Find<ListBox>("TaskList").ActualHeight >= 4 * 52 && !Find<Expander>("MemoExpander").IsExpanded,
+              "760×580 窗口给四条任务保留足够高度，备忘默认折叠");
+        Check(!Visible("OverdueList"), "之前未完成默认收起，不挤占当前清单");
         Check(ReferenceEquals(selected, window.SelectedTask) && ReferenceEquals(editor, Find<MarkdownNoteView>("TaskNoteEditor"))
               && editor.Text == "尚在编辑的笔记\n第二行" && editor.CaretIndex == 5 && Find<TextBox>("ReminderBox").Text == "09:35",
               "跨布局不重建任务与编辑器，保留正文、光标和未提交提醒时间");
@@ -51,10 +60,10 @@ internal static class Program
         Check(!window.IsCompactDetailOpen && Visible("TaskContent"), "详情返回待办清单");
         window.ShowTask(DateTime.Today, task.Id); Layout(760, 580);
         Check(window.IsCompactDetailOpen && window.SelectedTask?.Id == task.Id, "外部定位任务会直接打开窄屏详情");
-        foreach (var width in new[] { 999, 1000, 1399, 1400, 1920, 760, 1100 })
+        foreach (var width in new[] { 999, 1099, 1100, 1399, 1400, 1920, 760, 1100 })
         {
             Layout(width, 580);
-            var expected = width < 1000 ? WindowLayoutMode.Compact : width < 1400 ? WindowLayoutMode.Standard : WindowLayoutMode.Wide;
+            var expected = width < 1100 ? WindowLayoutMode.Compact : width < 1400 ? WindowLayoutMode.Standard : WindowLayoutMode.Wide;
             Check(window.CurrentLayoutMode == expected, $"连续缩放 {width} DIP 的断点正确");
             foreach (var name in new[] { "TaskContent", "TaskNotePanel", "DateToolbar", "DateRail" })
             {
@@ -148,6 +157,15 @@ internal static class Program
             "当日便签缩矮后出现正常的纵向滚动条");
         dailyScroll.ScrollToEnd(); LayoutDaily(285, 290);
         Check(dailyScroll.VerticalOffset > 0 && dailyScroll.HorizontalOffset == 0, "当日便签可以上下翻阅且不会横移");
+        window.ShowTask(DateTime.Today, task.Id); Layout(760, 580);
+        Find<Button>("BackToTasksButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Layout(760, 580);
+        var completedRow = (ListBoxItem)list.ItemContainerGenerator.ContainerFromItem(window.Tasks.Single(t => t.Id == task.Id));
+        var completionCheck = Descendants<CheckBox>(completedRow).First();
+        completionCheck.IsChecked = true;
+        completionCheck.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        Check(Visible("CompletionNotice") && repository.FindTask(task.Id)!.IsDone, "完成任务保存后显示可恢复提示");
+        Find<Button>("RestoreNoticeButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        Check(!Visible("CompletionNotice") && !repository.FindTask(task.Id)!.IsDone, "提示中的恢复调用现有恢复流程并写回待办");
         Console.WriteLine($"响应式布局：{_checks} 项检查通过，未显示窗口。");
     }
     private static void Check(bool condition, string name)

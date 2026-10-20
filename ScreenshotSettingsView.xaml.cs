@@ -11,7 +11,7 @@ public partial class ScreenshotSettingsView : System.Windows.Controls.UserContro
     private bool? _stacked;
     private void Fields_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var stacked = e.NewSize.Width < 560;
+        var stacked = e.NewSize.Width < 640;
         if (_stacked == stacked) return;
         _stacked = stacked;
         LabelColumn.Width = new GridLength(stacked ? 0 : 145);

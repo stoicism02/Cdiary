@@ -111,6 +111,7 @@ public partial class ScreenshotPage : System.Windows.Controls.UserControl
     { if (sender is System.Windows.Controls.CheckBox { Tag: string id } check) check.IsChecked = _selected.Contains(id); }
     private void UpdateSelection()
     {
+        CopyButton.Visibility = ExportButton.Visibility = DeleteButton.Visibility = _selected.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         CopyButton.IsEnabled = _selected.Count == 1; ExportButton.IsEnabled = DeleteButton.IsEnabled = _selected.Count > 0 && !_busy;
         DeletePrompt.Visibility = Visibility.Collapsed;
     }

@@ -1,0 +1,73 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Cdiary">
+    <!-- Main workspace only. TaskNoteWindow keeps its existing independent resources. -->
+    <ResourceDictionary.MergedDictionaries><local:LiveStyleDictionary/></ResourceDictionary.MergedDictionaries>
+    <SolidColorBrush x:Key="WindowSurface" Color="#F2F7F5"/>
+    <SolidColorBrush x:Key="PaperSurface" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Card" Color="#F2F7F5"/>
+    <SolidColorBrush x:Key="TextInk" Color="#263D38"/>
+    <SolidColorBrush x:Key="Ink" Color="#263D38"/>
+    <SolidColorBrush x:Key="Muted" Color="#60736C"/>
+    <SolidColorBrush x:Key="Outline" Color="#D7E2DC"/>
+    <SolidColorBrush x:Key="Accent" Color="#217D6F"/>
+    <SolidColorBrush x:Key="AccentOutline" Color="#217D6F"/>
+    <SolidColorBrush x:Key="SelectedSurface" Color="#E6F2ED"/>
+    <SolidColorBrush x:Key="DangerInk" Color="#B54A3B"/>
+    <Style x:Key="WorkspaceFocus"><Setter Property="Control.Template"><Setter.Value>
+        <ControlTemplate><Border BorderBrush="#217D6F" BorderThickness="1.5" CornerRadius="6" Margin="-2"/></ControlTemplate>
+    </Setter.Value></Setter></Style>
+    <Style x:Key="Pill" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource PaperSurface}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextInk}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Outline}"/><Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="12,6"/>
+        <Setter Property="FontWeight" Value="Normal"/><Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{StaticResource WorkspaceFocus}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+            <Border x:Name="Face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="6" Padding="{TemplateBinding Padding}" RenderTransformOrigin="0.5,0.5">
+                <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                <Trigger Property="IsPressed" Value="True"><Setter TargetName="Face" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.98" ScaleY="0.98"/></Setter.Value></Setter></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Face" Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="PrimaryPill" TargetType="Button" BasedOn="{StaticResource Pill}">
+        <Setter Property="Background" Value="{DynamicResource Accent}"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+    </Style>
+    <Style x:Key="IconPill" TargetType="Button" BasedOn="{StaticResource Pill}">
+        <Setter Property="Width" Value="32"/><Setter Property="Height" Value="32"/><Setter Property="Padding" Value="0"/><Setter Property="FontSize" Value="17"/>
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+    </Style>
+    <Style x:Key="DangerPill" TargetType="Button" BasedOn="{StaticResource Pill}"><Setter Property="Foreground" Value="{DynamicResource DangerInk}"/></Style>
+    <Style x:Key="NoteButton" TargetType="Button" BasedOn="{StaticResource Pill}"/>
+    <Style x:Key="PaperInput" TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource PaperSurface}"/><Setter Property="Foreground" Value="{DynamicResource TextInk}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource TextInk}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Outline}"/><Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,6"/><Setter Property="MinHeight" Value="34"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+            <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"><ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/></Border>
+            <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Frame" Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="CompactInput" TargetType="TextBox" BasedOn="{StaticResource PaperInput}">
+        <Setter Property="MinWidth" Value="42"/><Setter Property="Height" Value="34"/><Setter Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style TargetType="ScrollBar">
+        <Setter Property="Width" Value="10"/><Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent"><Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}" IsDirectionReversed="True">
+                <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/></Track.DecreaseRepeatButton>
+                <Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="#93ABA2" CornerRadius="4" Margin="2"/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+                <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/></Track.IncreaseRepeatButton>
+            </Track></Grid>
+            <ControlTemplate.Triggers><Trigger Property="Orientation" Value="Horizontal"><Setter Property="Width" Value="Auto"/><Setter Property="Height" Value="10"/><Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+</ResourceDictionary>

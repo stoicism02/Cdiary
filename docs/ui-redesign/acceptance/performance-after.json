@@ -1,0 +1,44 @@
+{
+  "method": "Same Release harness, isolated sample data, offscreen inactive windows; includes own WebView2 processes",
+  "assembly": "cfe280c3-2d1d-4366-8f22-8da486ef8c61",
+  "logicalProcessors": 16,
+  "windowInitializationIncluding1000msSettle": 4430.3177,
+  "samples": [
+    {
+      "phase": "main-window",
+      "processCount": 1,
+      "durationMs": 6155.9444,
+      "meanPrivateMiB": 125.9453125,
+      "maxPrivateMiB": 129.1640625,
+      "meanWorkingMiB": 201.2451171875,
+      "cpuMachinePercent": 3.5628552928702977
+    },
+    {
+      "phase": "hidden-main",
+      "processCount": 1,
+      "durationMs": 6109.9948,
+      "meanPrivateMiB": 114.94677734375,
+      "maxPrivateMiB": 121.37109375,
+      "meanWorkingMiB": 192.30126953125,
+      "cpuMachinePercent": 0.1917957993516185
+    },
+    {
+      "phase": "one-note",
+      "processCount": 6,
+      "durationMs": 6478.9921,
+      "meanPrivateMiB": 446.34716796875,
+      "maxPrivateMiB": 450.03125,
+      "meanWorkingMiB": 652.58154296875,
+      "cpuMachinePercent": 6.55663648229098
+    },
+    {
+      "phase": "three-notes",
+      "processCount": 8,
+      "durationMs": 6623.0263,
+      "meanPrivateMiB": 686.45947265625,
+      "maxPrivateMiB": 693.3046875,
+      "meanWorkingMiB": 951.12451171875,
+      "cpuMachinePercent": 6.9891014012322366
+    }
+  ]
+}

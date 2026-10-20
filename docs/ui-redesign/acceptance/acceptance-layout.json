@@ -1,0 +1,1350 @@
+{
+  "method": "WPF simulated root DPI, logical layout units; no foreground window",
+  "checks": 116,
+  "records": [
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 760,
+      "height": 580,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1100,
+      "height": 720,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1500,
+      "height": 900,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1,
+      "width": 1920,
+      "height": 1080,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 760,
+      "height": 580,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1100,
+      "height": 720,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1500,
+      "height": 900,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.25,
+      "width": 1920,
+      "height": 1080,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 760,
+      "height": 580,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1100,
+      "height": 720,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1500,
+      "height": 900,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 1.5,
+      "width": 1920,
+      "height": 1080,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 760,
+      "height": 580,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 136,
+        "Top": 56,
+        "Width": 608,
+        "Height": 524
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1100,
+      "height": 720,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 912,
+        "Height": 664
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1500,
+      "height": 900,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 172,
+        "Top": 56,
+        "Width": 1312,
+        "Height": 844
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "HomeTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CalendarTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "FocusTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SearchTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "CompletedTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "SettingsTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    },
+    {
+      "scale": 2,
+      "width": 1920,
+      "height": 1080,
+      "tab": "ScreenshotTab",
+      "bounds": {
+        "Left": 224,
+        "Top": 56,
+        "Width": 1628,
+        "Height": 1024
+      }
+    }
+  ]
+}
